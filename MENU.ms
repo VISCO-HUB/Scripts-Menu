@@ -1,0 +1,1025 @@
+/*
+[INFO]
+
+NAME = Scripts Launcher
+VERSION = 1.2.5
+AUTHOR = MastaMan
+DEV = ViscoCG
+HELP = \help\scriptsLauncher.html
+
+[1.0.0]
+
+* First release =
+
+[1.0.1]
+
++ Add buttons All and Favorite =
++ Add icon = 
+
+[1.0.2]
+
++ Add update feature = 
+
+[1.1.0]
+
+* Changed window width =
++ Add dock feature (Configure in Settings) =
+
+[1.2.0]
+
+* Small improvements =
+* Quick search by first word =
++ Add notify features (Configure in Settings) =
++ Add feature get info about any script =
+(Context menu) =
++ Add Info button in About rollout =
++ Add Help button in About rollout =
+
+[1.2.1]
+
+- BugFix: Small fix for 3Ds Max 2012=
+
+[1.2.3]
+
+* Added Installs rollout for quick install plugins=
+- BugFix: New versions notify=
+
+[1.2.4]
+* Adopted for ArchViz=
+
+[1.2.5]
+
++ Added: Added Test section=
+
+[ABOUT]
+
+- Run any script from VSscripts directory =
+- Search =
+- Favorite =
+- Updates =
+- Notification =
+- Info about scripts =
+- More features coming soon... =
+
+[SCRIPT]
+
+*/
+
+
+global szScriptsDir = getFilenamePath (getThisScriptFilename())
+global szInstallsDir = szScriptsDir + "installs"
+global szTestDir = szScriptsDir  + "\test"
+global iniSettingsFile = @"C:\temp\scripts\ini\menu.ini"
+
+global szExt = ".ms"
+global szExt2 = ".mzp"
+
+
+----------------------------------------------------------------------------------------------------
+try(cui.UnRegisterDialogBar rScriptsLoader) catch()
+try(closeRolloutFloater rScriptsLoader)catch()
+global szScriptsPath = #()
+global szInstallsPath = #()
+global szTestPath = #()
+global szTempScriptspath = #()
+global iWinPos = [0.0, 0.0]
+
+global goodChars = #("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z")
+
+global rLauncher
+global rInstalls
+global rTest
+global rSettings
+global rAbout
+global rScriptsLoader = newRolloutFloater "Menu" 235 650
+
+----------------------------------------------------------------------------------------------------
+
+fn getScriptIniInfo s releaseInfo: "" =
+(		
+	if(releaseInfo != "") do
+	(
+		r = getINISetting s releaseInfo
+		return r
+	)
+	
+	v = getINISetting s "INFO" "VERSION"
+	a = getINISetting s "INFO" "AUTHOR"
+	n = getINISetting s "INFO" "NAME"
+	o = getINISetting s "ABOUT"
+	c = getINISetting s "INFO" "DEV"
+	h = getINISetting s "INFO" "HELP"
+	t = getINISetting s "TEST"
+	
+	r = for i in (getINISetting s) where i != "ABOUT" and i != "SCRIPT" and i != "COPY" and i != "TEST" collect i
+	
+	return #(n, a, v, o, r, c, h, t)
+)
+
+fn parseIniLine m = 
+(
+	if(m.count == 0) do return ""
+	
+	l = ""	
+
+	try
+	(
+		for i in m do 
+		(	
+			if(i[1] == "_") do 
+			(
+				l += "_______________________________________\r\n\r\n" 
+				continue
+			)
+			if(i[1] == "@") do 
+			(
+				l += "\r\n"
+				continue
+			)
+			
+			l += i + "\r\n"
+		)
+	) catch()
+	return l
+)
+
+fn initTextBox textBox =
+(
+	b = (colorMan.getColor #background) * 255
+	t = (colorMan.getColor #text) * 255
+	
+	textBox.Font = dotNetObject "System.Drawing.Font" "MS Sans Serif" 8 ((dotNetClass "System.Drawing.FontStyle").Regular)
+	textBox.BorderStyle = (dotNetClass "System.Windows.Forms.BorderStyle").FixedSingle
+	textBox.BackColor = (dotNetClass "System.Drawing.Color").fromARGB (b[1] as integer) (b[2] as integer) (b[3] as integer)
+	textBox.ForeColor = (dotNetClass "System.Drawing.Color").fromARGB (t[1] as integer) (t[2] as integer) (t[3] as integer)
+	textBox.MultiLine = true
+	textBox.WordWrap = true
+	textBox.ScrollBars = (dotNetClass "System.Windows.Forms.ScrollBars").Vertical
+	textBox.ReadOnly = true
+)	
+
+fn displayInfo szScriptPath =
+(
+	try(DestroyDialog rNotify)catch()
+	
+	global scriptInfo = getScriptIniInfo szScriptPath
+
+	if(scriptInfo[1] == "" and scriptInfo[2] == "") do
+	(
+		try(DestroyDialog rNotify)catch()
+		return messageBox "No info about this script!" title: "Sorry!"
+	)
+		
+	global script = szScriptPath
+	global szScriptHelpFile = ""
+	
+	rollout rNotify "Info" 
+	(
+		label lblReleases "Release:" across: 3 align: #left offset: [-5, 0]
+		dropdownlist ddlReleases "" align: #left offset: [-25, -2]
+		button btnScriptHelp "?" align: #right tooltip: "Help is not available for this script" enabled: false offset: [8, 0]
+				
+		dotNetControl edtStat "System.Windows.Forms.Textbox" width:260 height:260 align:#center 
+				
+		button btnCopy "Copy" align: #left width: 50 across: 2
+		button btnOK "Ok" align: #right  width: 35
+	
+		fn buildInfo =
+		(				
+			i = scriptInfo			
+			
+			szStat = ""
+			szStat = "Name:\t" + i[1] + "\r\n"
+			szStat += "Author:\t" + i[2] + "\r\n"
+			szStat += "Version:\t" + i[3] + "\r\n"
+			if(i[6] != "") do szStat += "Dev.:\t" + i[6] + "\r\n"
+			if(i[4].count > 0) do
+			(
+				szStat += "\r\nAbout:\r\n\r\n" 
+				
+				szStat += parseIniLine i[4]
+			)
+			
+			
+			p = getFilenamePath(getThisScriptFilename()) + i[7]
+			if(i[7] != "" and doesFileExist p) do
+			(
+				btnScriptHelp.enabled = true
+				btnScriptHelp.tooltip = "Help is available for this script"
+				szScriptHelpFile = p
+			)
+			
+			edtStat.text = szStat
+		)
+		
+		fn buildRelease v =
+		(										
+			szStat = ""
+						
+			szStat += "Release Notes " + v + ":\r\n\r\n" 
+			
+			r = getScriptIniInfo script releaseInfo:v
+			
+			if(r.count == 0) do return ""
+			
+			szStat += parseIniLine r
+			
+			edtStat.text = szStat
+		)
+		
+		on ddlReleases selected x do 
+		(
+			case x of
+			(
+				1: buildInfo()
+				default: buildRelease (ddlReleases.selected)
+			)
+		)
+		on btnScriptHelp pressed do if(doesFileExist szScriptHelpFile) do shellLaunch szScriptHelpFile ""
+	
+		on btnOK pressed do try(DestroyDialog rNotify)catch()
+		on rNotify open do
+		(
+			initTextBox edtStat
+			
+			i = scriptInfo
+		
+			edtStat.text = buildInfo() 
+
+			ddlReleases.items = i[5]
+			rNotify.title = i[1]						
+		)
+		on btnCopy pressed do setClipBoardText edtStat.text			
+	)
+
+	createDialog rNotify 260 320 --modal:true
+)
+
+rollout rLauncher "Scripts" 
+(
+
+	checkbutton ckbAll "All" width:100 height:25 across: 2
+	checkbutton ckbFavorite "Favorite"  width:100 height:25
+	dotNetControl edtFindScript "system.windows.forms.textBox" width: 165 height:26 across: 2 align:#left
+	dotNetControl btnFindClear "system.windows.forms.button" width:24 height:24  align: #right offset: [0, -2]
+	dotNetControl lbxScriptList "system.windows.forms.listView" height:330				
+	button btnRunScript "Run Script" width:200 height:34		
+	timer tmrFocus "" interval: 200 active: true
+
+	
+	global kKeys =  DotNetClass "System.Windows.Forms.Keys" 
+	global Clr = dotNetClass "System.Drawing.Color"		
+----------------------------------------------------------------------------------------------------	
+
+	fn Settings z k p w =
+	(	
+		makeDir (getFilenamePath iniSettingsFile)
+		
+		case w of
+		(
+			"r":
+			(
+				s = getINISetting iniSettingsFile z k
+				case p of
+				(
+					"int": return s as integer
+					"float": return s as float
+					"bool": if s == "true" then true else false
+					default: return s
+				)
+			)
+			"a":
+			(
+				return getINISetting iniSettingsFile z
+			)
+			"d":
+			(
+				delIniSetting iniSettingsFile z k
+			)
+			default: return setINISetting iniSettingsFile z k (p as string)
+		)
+	)
+	
+	fn saveWinPos =
+	(
+		Settings "POS" "x"  iWinPos[1] "w"
+		Settings "POS" "y"  iWinPos[2] "w"		
+	)
+	
+	fn getSelectedId =
+	(
+		c = lbxScriptList.SelectedItems.Count - 1
+		
+		id = 0
+		
+		for i = 0 to c do 
+		(		
+			id = lbxScriptList.SelectedItems.Item[i].Index + 1			
+		)
+	
+		return id
+	)
+	
+	fn addToFavorite =
+	(
+		id = getSelectedId()
+		
+		if(id != 0) do Settings "FAVORITE" szTempScriptspath[id] "true" "w"
+	)
+	
+	fn initDotNet =
+	(	
+		
+		lbxScriptList.Clear()
+		lbxScriptList.View = (dotNetClass "System.Windows.Forms.View").Details	
+		lbxScriptList.FullRowSelect = true
+		lbxScriptList.GridLines = true		
+		lbxScriptList.ShowItemToolTips = true
+		lbxScriptList.MultiSelect = false
+		lbxScriptList.CheckBoxes = false
+		lbxScriptList.HideSelection = false
+		lbxScriptList.Columns.Add "Name" 175
+			
+		lbxScriptList.Update()
+		lbxScriptList.Refresh()
+			
+		btnFindClear.text = "X"		
+	)
+		
+	fn deselectAll =
+	(
+		try
+		(
+			c = lbxScriptList.Items.Count - 1
+			for i = c to 0 by - 1 where c > 0 do
+			(
+				lbxScriptList.Items.Item[i].BackColor = Clr.White
+				lbxScriptList.Items.Item[i].ForeColor = Clr.Black	
+			)
+		)
+		catch()
+	)
+	
+	fn addToLbxList r =
+	(
+		lbxScriptList.Items.Clear()
+		rows = #()	
+		i = 1
+		for x in r do	
+		(
+			li = dotNetObject "System.Windows.Forms.ListViewItem" ""
+			li.text = (i as string + ". " + getFilenameFile x)
+		
+			append rows li		
+			i += 1
+		)
+		
+		lbxScriptList.Items.addRange rows
+	)	
+	
+	fn buildScriptList =
+	(
+		szScriptsPath = getFiles(szScriptsDir + "\*" + szExt)
+		
+		szScriptsPath = for i in szScriptsPath where findString i "MENU" == undefined and findString i "menu" == undefined collect i
+		
+		szTempScriptspath = szScriptsPath
+		
+		addToLbxList(szScriptsPath)
+	)
+	
+	fn buildFavoriteList =
+	(
+		szScriptsPath = (Settings "FAVORITE" "" "" "a")
+		szTempScriptspath = szScriptsPath
+		
+		addToLbxList(szScriptsPath)
+	)
+	
+	fn removeFromFavorite =
+	(
+		id = getSelectedId()
+		
+		if(id != 0) do Settings "FAVORITE" szTempScriptspath[id] "false" "d"
+			
+		
+		buildFavoriteList()
+	)
+	
+	fn showScriptInfo =
+	(
+		id = getSelectedId()
+		
+		if(id != 0) do displayInfo szTempScriptspath[id]				
+	)
+	
+	fn showScriptHelp =
+	(
+		id = getSelectedId()
+		
+		if(id != 0) do
+		(
+			i = getScriptIniInfo szTempScriptspath[id]
+			
+			szHelp = (getFilenamePath (getThisScriptFilename())) + i[7]
+			
+			if(i[7] == "" or doesFileExist szHelp == false) do return  messageBox "No help for this script!" title: "Sorry."
+			
+			ShellLaunch szHelp ""			
+		)
+	)
+	
+	fn bindContextMenu =
+	(
+		id = getSelectedId()
+			
+		
+		contextMenu = dotNetObject "System.Windows.Forms.ContextMenuStrip"	
+		if(ckbFavorite.checked == false) then
+		(
+			dotNet.addEventHandler (contextMenu.Items.Add("Add to favorite")) "Click" addToFavorite
+		)
+		else
+		(
+			dotNet.addEventHandler (contextMenu.Items.Add("Remove from favorite")) "Click" removeFromFavorite
+		)
+		
+		contextMenu.Items.Add("-")
+		dotNet.addEventHandler (contextMenu.Items.Add("Info about script")) "Click" showScriptInfo
+		dotNet.addEventHandler (contextMenu.Items.Add("Help for script")) "Click" showScriptHelp
+		
+		/* Enable/ Disable StripMenu items*/
+		
+		s = getThisScriptFilename()
+			
+		i = #()	
+		if(id > 0) do i = getScriptIniInfo szTempScriptspath[id]
+
+			
+		if(id == 0) do contextMenu.Items.Item[0].Enabled = false
+		if(id == 0 or (i[1] == ""and i[2] == "")) do contextMenu.Items.Item[2].Enabled = false
+		
+		if(id == 0 or i[7] == undefined or i[7] == "" or (doesFileExist ((getFilenamePath s) + i[7])) == false) do contextMenu.Items.Item[3].Enabled = false
+		
+			
+			
+			
+		lbxScriptList.ContextMenuStrip = contextMenu	
+	)
+	
+	fn runScript p =
+	(
+		try
+		(
+			if(p == 1) do lbxScriptList.Items.Item[0].Selected = true
+			
+			c = lbxScriptList.SelectedItems.Count - 1
+			
+			for i = 0 to c do
+			(
+				x = lbxScriptList.SelectedItems.Item[i].Index + 1
+				
+				if(szTempScriptspath[x] != undefined and doesFileExist szTempScriptspath[x]) then 
+				(
+					try
+					(
+						fileIn szTempScriptspath[x] quiet: true
+						clearListener()	
+						print ("VS Tools run script: " + getFilenameFile szTempScriptspath[x])
+					)
+					catch()
+				)
+				
+				exit				
+			)
+		)
+		catch()
+	)
+	
+	fn displayList x =
+	(
+		bindContextMenu()
+		
+		Settings "MAIN" "SHOW" x "w"
+		
+		case x of
+		(
+			-- All
+			1: buildScriptList()			
+			-- Favorite
+			2: buildFavoriteList()			
+		)
+	)
+	
+	fn fnSetDock d s = 
+	(
+		Settings "DOCK" "DOCKABLE"  d "w"
+		Settings "DOCK" "DOCKSIDE"  s "w"
+		
+		if(d) then
+		(
+			cui.RegisterDialogBar  rScriptsLoader style:#(#cui_floatable, #cui_dock_vert, #cui_handles, #cui_max_sized, #style_toolwindow, #style_sysmenu)
+		
+			case s of
+			(
+				1:  cui.DockDialogBar rScriptsLoader #cui_dock_left
+				2:  cui.DockDialogBar rScriptsLoader #cui_dock_right
+			)			
+		)
+		else	
+		(
+			if(rScriptsLoader.dialogBar) do
+			(
+				cui.UnRegisterDialogBar rScriptsLoader	
+			)
+			
+			if (not rScriptsLoader.dialogBar) do
+			(
+				x = (Settings "POS" "x" "float" "r") 
+				y = (Settings "POS" "y" "float" "r") 
+
+				rScriptsLoader.pos = [x, y]
+			)								
+		)			
+	)
+----------------------------------------------------------------------------------------------------	
+	
+	on rLauncher open do
+	(
+		
+		d = Settings "DOCK" "DOCKABLE"  "bool" "r"
+		s = Settings "DOCK" "DOCKSIDE"  "int" "r"		
+		
+		fnSetDock d s
+		
+		initDotNet()
+		
+		z = Settings "MAIN" "SHOW" "int" "r"
+		case z of (1: ckbAll.checked = true; 2: ckbFavorite.checked = true) 
+				
+		bindContextMenu()
+		
+		x = (Settings "POS" "x" "float" "r") 
+		y = (Settings "POS" "y" "float" "r") 
+	
+		try(rScriptsLoader.pos = [x, y]) catch()
+		
+		if(ckbFavorite.checked == false) then buildScriptList() else buildFavoriteList()			
+	)
+	on rLauncher close do
+	(
+		saveWinPos()
+		try(DestroyDialog rNotify)catch()		
+	)
+	on rLauncher moved p do
+	(
+		iWinPos = p
+	)
+	on edtFindScript TextChanged x do
+	(
+		w = edtFindScript.text 
+		
+		if(w == "Search...") do return false
+
+		o = #()
+		
+		if(w.count > 0) then
+		(
+			for i in szScriptsPath do
+			(
+				t = getFilenameFile i
+						
+				j = w + "*"
+										
+				if(matchPattern t pattern: j) do
+				(					
+					append o i
+				)
+			)
+			
+			for i in szScriptsPath do
+			(
+				t = getFilenameFile i
+						
+				j = "*" + w + "*"
+										
+				if(matchPattern t pattern: j and findItem o i == 0) do
+				(					
+					append o i
+				)
+			)
+						
+			addToLbxList o			
+			szTempScriptspath = o
+			
+			try
+			(
+				lbxScriptList.Items.Item[0].Focused =  true
+				lbxScriptList.Items.Item[0].BackColor = Clr.DodgerBlue
+				lbxScriptList.Items.Item[0].ForeColor = Clr.White	
+			)
+			catch()
+		)
+		else
+		(
+			addToLbxList szScriptsPath
+			szTempScriptspath = szScriptsPath
+		)		
+	)
+	
+	on edtFindScript GotFocus do
+	(
+		t = edtFindScript.text
+		if(t == "Search...") do edtFindScript.text = ""
+	)
+		
+	on edtFindScript LostFocus do
+	(
+		t = edtFindScript.text
+		if(t == "") do edtFindScript.text = "Search..."
+	)
+	
+	on edtFindScript keyUp k do
+	(	 		
+		if(k.KeyCode == kKeys.Escape) do edtFindScript.text = ""
+		if(k.KeyCode == kKeys.Enter) do runScript 1
+		edtFindScript.Focus()
+		
+		if(k.KeyCode == kKeys.Down) do lbxScriptList.Focus()				
+	)
+	on lbxScriptList DoubleClick a do
+	(
+		runScript 0
+	)
+	on lbxScriptList keyUp k do
+	(
+		if(k.KeyCode == kKeys.Escape or k.KeyCode == kKeys.Tab) do 
+		(
+			edtFindScript.text = ""
+			edtFindScript.Focus()
+			return false
+		)
+		if(k.KeyCode == kKeys.Enter) do 
+		(
+			runScript 0
+			return false
+		)
+		if(k.KeyCode == kKeys.Up) do 
+		(
+			if(lbxScriptList.Items.Item[0].Selected == true) do edtFindScript.Focus()
+			return false
+		)
+				
+		goodChar = false		
+		char = k.KeyCode.ToString()		
+		for i in goodChars where i == char do goodChar = true
+			
+		if(not goodChar) do return false
+	
+		
+		edtFindScript.Focus()
+		edtFindScript.text = k.KeyCode.ToString()
+		edtFindScript.SelectionStart = 2
+	)
+	on lbxScriptList MouseUp do
+	(		
+		deselectAll()
+		bindContextMenu()
+	)
+	
+
+	
+	on btnRunScript pressed do
+	(
+		lbxScriptList.Focus()
+		runScript 0
+	)
+	on btnFindClear mouseDown do
+	(
+		edtFindScript.text = ""
+		edtFindScript.Focus()
+	)
+	on ckbAll changed a do
+	(
+		ckbAll.checked = true
+		ckbFavorite.checked = false
+		displayList 1
+		edtFindScript.Focus()
+		edtFindScript.text = ""
+	)
+	on ckbFavorite changed a do
+	(
+		ckbFavorite.checked = true
+		ckbAll.checked = false
+		displayList 2
+		edtFindScript.Focus()
+		edtFindScript.text = ""
+	)
+	on tmrFocus tick do
+	(
+		edtFindScript.Focus()
+		tmrFocus.active = false
+	)
+	
+	on rLauncher rolledUp x do
+	(
+		rLauncher.lbxScriptList.Update()
+		rLauncher.lbxScriptList.Refresh()
+	)
+)
+
+rollout rUpdate "Update"
+(	
+	button btnUpdate "Update Scripts" enabled: true
+	
+	on btnUpdate pressed do
+	(				
+		s = getFilenamePath (getThisScriptFilename())
+				
+		fileIn(getThisScriptFilename())		
+	)	
+	
+	on rUpdate rolledUp x do
+	(
+		rLauncher.lbxScriptList.Update()
+		rLauncher.lbxScriptList.Refresh()
+	)
+)
+
+fn notifyScripts =
+(
+	if(rSettings.cbxScriptsUpdated.checked == false) do return false
+	
+	f = getFiles(szScriptsDir + "\*" + szExt)
+	 
+	szUpdated = ""
+	szNew = ""
+	m = ""
+			
+	for i in f do
+	(		
+		n = getFilenameFile  i 
+
+		v = getScriptIniInfo i
+						
+		z = rLauncher.Settings "SCRIPTS" n "string" "r"
+		
+		if(z != "" and v[3] > z) then
+		(
+			szUpdated += "\t" + n + " " + v[3] + "\r\n\r\n"
+			szUpdated += "Change Log:\r\n\r\n"
+			
+			r = getScriptIniInfo i releaseInfo:v[3]
+			szUpdated += parseIniLine r + "\r\n"
+			szUpdated += "_______________________________________\r\n\r\n" 
+		)
+		else if (v[3] != "" and z == "") then 
+		(
+			v = getScriptIniInfo i
+			szNew += "\t" + n + " " + v[3] + "\r\n\r\n"
+			
+			szNew += "Change Log:\r\n\r\n"
+				
+			r = getScriptIniInfo i releaseInfo:v[3]
+			szNew += parseIniLine r + "\r\n"
+			szNew += szUpdated += "_______________________________________\r\n\r\n" 
+		)
+				
+		rLauncher.Settings "SCRIPTS" n v[3] "w"
+	)
+	
+	m1 = (filterString szNew "\t\r\n").count
+	m2 = (filterString szUpdated "\t\r\n").count
+	if(m1 > 0) do m += "Added new scripts:\r\n\r\n" + szNew	
+	if(m2 > 0) do m += "Updated scripts:\r\n\r\n" + szUpdated
+	
+	
+	if(m1 > 0 or m2 > 0) do
+	(
+		global rNotify
+		try(DestroyDialog rNotify)catch()	
+				
+		global szStat = m
+	
+		rollout rNotify "New Releases" 
+		(
+			dotNetControl edtStat "System.Windows.Forms.Textbox" width:260 height:260 align:#center readOnly: true 
+			button btnCopy "Copy" align: #left width: 50 across: 2
+			button btnOK "Ok" align: #right  width: 35
+			
+			on btnOK pressed do try(DestroyDialog rNotify)catch()
+			on rNotify open do 
+			(	
+				initTextBox edtStat
+				edtStat.text = szStat	
+			)
+			on btnCopy pressed do setClipBoardText edtStat.text			
+		)
+
+		createDialog rNotify 260 295 --modal:true
+	)
+)
+
+rollout rInstalls "Installs"
+(
+	group "Install Plugin"
+	(
+		dropdownlist ddlInstalls ""
+		button btnInstall "Install"
+	)
+	
+	on rInstalls open do
+	(
+		i = getFiles(szInstallsDir + "\*" + szExt2)
+		
+		szInstallsPath = #("")
+		
+		join szInstallsPath i
+		
+		ddlInstalls.items = for z in szInstallsPath collect (getFilenameFile z)
+	)
+	
+	on btnInstall pressed do
+	(
+		i = ddlInstalls.selection
+		
+		if(szInstallsPath[i] != undefined and szInstallsPath[i] != "" and doesFileExist szInstallsPath[i]) do fileIn szInstallsPath[i] 
+	)
+)
+
+rollout rTest "Test"
+(
+	group "Test Script"
+	(
+		dropdownlist ddlTest ""
+		button btnTest "Test"
+	)
+	
+	group "Description"
+	(
+		dotNetControl edtDescription "System.Windows.Forms.Textbox" height:200 align:#center 
+	)
+	
+	on rTest open do
+	(
+		initTextBox edtDescription
+		
+		i = getFiles(szTestDir + "\*" + szExt)
+		
+		szTestPath = #("")
+		
+		join szTestPath i
+		
+		ddlTest.items = for z in szTestPath collect (getFilenameFile z)
+	)
+	
+	on btnTest pressed do
+	(
+		i = ddlTest.selection
+		
+		if(szTestPath[i] != undefined and szTestPath[i] != "" and doesFileExist szTestPath[i]) do fileIn szTestPath[i] 
+	)
+	
+	on ddlTest selected i do
+	(		
+		edtDescription.text = ""
+		
+		if(szTestPath[i] != undefined and szTestPath[i] != "" and doesFileExist szTestPath[i])  do
+		(
+			d = ""
+			t = getScriptIniInfo szTestPath[i]		
+			print t
+			if(t[8] != undefined) do d = parseIniLine t[8]
+						
+			edtDescription.text = d
+		)
+		
+	)
+	
+)
+
+rollout rSettings "Settings"
+(
+	group "Dock Launcher"
+	(
+		checkbox cbxDockable "Dock Launcher" 
+		radioButtons rdoDockTo "" labels:#("Left", "Right") default:1 columns:2 align: #left		
+	)
+	
+	group "Notify Me When"
+	(
+		checkbox cbxScriptsUpdated "Scripts Updated" checked: true
+		checkbox cbxScriptsAdded "New Scripts Added" checked: true
+	)
+	
+	button btnOpenScripts "Open Scripts Folder"
+	timer tmrNotify active: true interval: 500
+
+	on btnOpenScripts pressed do
+	(
+		if(doesDirectoryExist szScriptsDir) do return ShellLaunch szScriptsDir ""
+		return messageBox "Scripts Directory not found!" title: "Warning!"
+	)
+	
+	on cbxDockable changed x do
+	(
+		s = rdoDockTo.state
+		rLauncher.fnSetDock x s				
+	)
+	
+	on rdoDockTo changed s do
+	(
+		x = cbxDockable.checked
+		
+		if(x == true) do rLauncher.fnSetDock x s
+	)
+	
+	on cbxScriptsUpdated changed x do rLauncher.Settings "MAIN" "NOTIFYUPDATED" x "w"
+	
+	on cbxScriptsAdded changed x do rLauncher.Settings "MAIN" "NOTIFYNEW" x "w"
+	
+	on rSettings open do
+	(
+		d = rLauncher.Settings "DOCK" "DOCKABLE"  "bool" "r"
+		s = rLauncher.Settings "DOCK" "DOCKSIDE"  "int" "r"	
+		try
+		(
+			cbxDockable.checked = d
+			rdoDockTo.state = s 
+		)
+		catch()
+		
+		
+		n = rLauncher.Settings "MAIN" "NOTIFYNEW"  "string" "r"
+		u = rLauncher.Settings "MAIN" "NOTIFYUPDATED"  "string" "r"
+				
+		if(n != "") do cbxScriptsAdded.checked = rLauncher.Settings "MAIN" "NOTIFYNEW"  "bool" "r"
+		if(u != "") do cbxScriptsUpdated.checked = rLauncher.Settings "MAIN" "NOTIFYUPDATED"  "bool" "r"
+		
+		
+		
+	)
+	
+	on tmrNotify tick do
+	(
+		notifyScripts()
+		tmrNotify.active = false
+	)
+	
+	on rSettings rolledUp x do
+	(
+		rLauncher.lbxScriptList.Update()
+		rLauncher.lbxScriptList.Refresh()
+	)
+)
+
+rollout rAbout "About" 
+(
+	label lblName "" 
+	label lblVer "" 
+	
+	label lblAuthor "" height: 30
+	label lblCopy ""  height: 30
+	button btnInfo "Info" across: 2
+	button btnHelp "Help" enabled: false
+	
+	fn getHelp run: false =
+	(
+		s = getThisScriptFilename()
+		i = getScriptIniInfo s
+		szHelp = (getFilenamePath s) + i[7]
+		if(i[7] != "" and doesFileExist szHelp) do btnHelp.enabled = true
+			
+		if(run) do ShellLaunch szHelp ""
+	)
+	
+	on btnHelp pressed do getHelp run: true
+	
+	on btnInfo pressed do displayInfo (getThisScriptFilename())
+		
+	on rAbout open do
+	(		
+		i = getScriptIniInfo (getThisScriptFilename())
+			
+		lblName.caption = i[1]
+		lblAuthor.caption = i[2]
+		lblVer.caption = i[3]
+		lblCopy.caption = i[6]
+		
+		getHelp()
+	)
+	
+	on rAbout rolledUp x do
+	(
+		rLauncher.lbxScriptList.Update()
+		rLauncher.lbxScriptList.Refresh()
+	)
+)
+
+addRollout rLauncher rScriptsLoader rolledUp:false 
+addRollout rInstalls rScriptsLoader rolledUp:true 
+addRollout rTest rScriptsLoader rolledUp:true 
+addRollout rUpdate rScriptsLoader rolledUp:true 
+addRollout rSettings rScriptsLoader rolledUp:true 
+addRollout rAbout rScriptsLoader rolledUp:true
+
