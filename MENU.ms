@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.2.5
+VERSION = 1.3.0
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = \help\scriptsLauncher.html
@@ -51,6 +51,12 @@ HELP = \help\scriptsLauncher.html
 
 + Added: Added Test section=
 
+[1.3.0]
+
++ Added: Categories=
++ Added: Filter by category=
+- Removed: Buttons All and Favorite=
+
 [ABOUT]
 
 - Run any script from VSscripts directory =
@@ -66,11 +72,16 @@ HELP = \help\scriptsLauncher.html
 */
 
 
-global szScriptsDir = getFilenamePath (getThisScriptFilename())
-global szInstallsDir = szScriptsDir + "installs"
-global szTestDir = szScriptsDir  + "\test"
+global szScriptsDir = getFilenamePath (getThisScriptFilename()) + @"scripts\"
+global szInstallsDir = szScriptsDir + @"installs\"
+global szTestDir = szScriptsDir + @"test\"
+global szIconFilter24i = szScriptsDir + @"\img\filter_24i.bmp"
+global szIconFilter24a = szScriptsDir + @"\img\filter_24a.bmp"
+	
 global iniSettingsFile = @"C:\temp\scripts\ini\menu.ini"
-
+global filterPrefix = "_"
+global szCurrentCategory = "All"
+	
 global szExt = ".ms"
 global szExt2 = ".mzp"
 
@@ -80,6 +91,7 @@ try(cui.UnRegisterDialogBar rScriptsLoader) catch()
 try(closeRolloutFloater rScriptsLoader)catch()
 global szScriptsPath = #()
 global szInstallsPath = #()
+global szCategoriesPath = #()
 global szTestPath = #()
 global szTempScriptspath = #()
 global iWinPos = [0.0, 0.0]
@@ -257,9 +269,9 @@ fn displayInfo szScriptPath =
 
 rollout rLauncher "Scripts" 
 (
+	dotNetControl lblTitle "System.Windows.Forms.Label" width: 148 height: 24 align: #left offset: [24, 0] across: 2	
+	button btnFilter width: 24 height: 24  align: #left border: false offset: [-100, 0]
 
-	checkbutton ckbAll "All" width:100 height:25 across: 2
-	checkbutton ckbFavorite "Favorite"  width:100 height:25
 	dotNetControl edtFindScript "system.windows.forms.textBox" width: 165 height:26 across: 2 align:#left
 	dotNetControl btnFindClear "system.windows.forms.button" width:24 height:24  align: #right offset: [0, -2]
 	dotNetControl lbxScriptList "system.windows.forms.listView" height:330				
@@ -327,8 +339,27 @@ rollout rLauncher "Scripts"
 		if(id != 0) do Settings "FAVORITE" szTempScriptspath[id] "true" "w"
 	)
 	
+	fn getCategory c =
+	(
+		p = filterString c "\\"
+		
+		return trimLeft p[p.count] filterPrefix
+	)	
+	
 	fn initDotNet =
 	(	
+		bg = (colorMan.getColor #background) * 255
+		
+		btnFilter.images = #(szIconFilter24i, szIconFilter24a , 1,1,1,1,1)
+		
+		lblTitle.TextAlign =  (getProperty lblTitle.TextAlign "MiddleCenter") 
+		lblTitle.BackColor = lblTitle.backcolor.fromARGB bg[1] bg[2] bg[3]
+		lblTitle.ForeColor = lblTitle.forecolor.fromARGB 255 255 255
+		
+		FontStyle = dotnetclass "System.Drawing.FontStyle"
+		
+		lblTitle.Font = dotnetobject "System.Drawing.Font" "Arial" 9 FontStyle.Bold
+		
 		
 		lbxScriptList.Clear()
 		lbxScriptList.View = (dotNetClass "System.Windows.Forms.View").Details	
@@ -361,7 +392,7 @@ rollout rLauncher "Scripts"
 	)
 	
 	fn addToLbxList r =
-	(
+	(				
 		lbxScriptList.Items.Clear()
 		rows = #()	
 		i = 1
@@ -377,15 +408,21 @@ rollout rLauncher "Scripts"
 		lbxScriptList.Items.addRange rows
 	)	
 	
-	fn buildScriptList =
-	(
-		szScriptsPath = getFiles(szScriptsDir + "\*" + szExt)
+	fn buildScriptList c =
+	(											
+		szScriptsPath = #()
+		for i in szCategoriesPath where c == getCategory i or c == "All" do
+		(
+			join szScriptsPath (getFiles(i + "*" + szExt))
+		)
 		
-		szScriptsPath = for i in szScriptsPath where findString i "MENU" == undefined and findString i "menu" == undefined collect i
+		join szScriptsPath (getFiles(szScriptsDir + "*" + szExt))
+				
+		szScriptsPath = for i in szScriptsPath where getFilenameFile i != "menu.ms" collect i
 		
 		szTempScriptspath = szScriptsPath
 		
-		addToLbxList(szScriptsPath)
+		addToLbxList szScriptsPath
 	)
 	
 	fn buildFavoriteList =
@@ -435,7 +472,7 @@ rollout rLauncher "Scripts"
 			
 		
 		contextMenu = dotNetObject "System.Windows.Forms.ContextMenuStrip"	
-		if(ckbFavorite.checked == false) then
+		if(szCurrentCategory != "Favorite") then
 		(
 			dotNet.addEventHandler (contextMenu.Items.Add("Add to favorite")) "Click" addToFavorite
 		)
@@ -485,7 +522,7 @@ rollout rLauncher "Scripts"
 					(
 						fileIn szTempScriptspath[x] quiet: true
 						clearListener()	
-						print ("VS Tools run script: " + getFilenameFile szTempScriptspath[x])
+						print ("Scripts Launcher run: " + getFilenameFile szTempScriptspath[x])
 					)
 					catch()
 				)
@@ -494,21 +531,6 @@ rollout rLauncher "Scripts"
 			)
 		)
 		catch()
-	)
-	
-	fn displayList x =
-	(
-		bindContextMenu()
-		
-		Settings "MAIN" "SHOW" x "w"
-		
-		case x of
-		(
-			-- All
-			1: buildScriptList()			
-			-- Favorite
-			2: buildFavoriteList()			
-		)
 	)
 	
 	fn fnSetDock d s = 
@@ -542,11 +564,55 @@ rollout rLauncher "Scripts"
 			)								
 		)			
 	)
+	
+	fn changeCategory c =
+	(
+		bindContextMenu()
+		
+		szCurrentCategory = c
+		
+		lblTitle.text = szCurrentCategory
+		
+		Settings "MAIN" "SHOW" c "w"
+		
+		case c of
+		(
+			"Favorite": buildFavoriteList()			
+			default: buildScriptList c
+		)	
+		
+		edtFindScript.Focus()
+		edtFindScript.text = ""
+	)
+	
+	fn showCategoriesMenu =
+	(			
+		p = btnFilter.pos
+		p.y += 24
+		
+		ex = "rcmenu rcCategories \n(\n"		
+		ex += "menuItem rcAll \"All\" \n"
+		ex += "on rcAll picked do rLauncher.changeCategory \"All\"\n"
+		ex += "menuItem rcFavorite \"Favorite\" \n"
+		ex += "on rcFavorite picked do rLauncher.changeCategory \"Favorite\"\n"
+		ex += "separator sep1\n"	
+		
+		for i in 1 to szCategoriesPath.count do
+		(	
+			c = getCategory szCategoriesPath[i]
+			ex += "menuItem rcCat" + i as string +  " \"" + c+ "\"\n" 
+			ex += "on rcCat" + i as string + " picked do rLauncher.changeCategory \"" + c + "\"\n"	
+		)
+		
+		ex += "\n )\n popUpMenu rcCategories rollout: rLauncher pos:" + p as string + "\n"
+		
+		execute ex
+	)
+
 ----------------------------------------------------------------------------------------------------	
 	
 	on rLauncher open do
-	(
-		
+	(								
 		d = Settings "DOCK" "DOCKABLE"  "bool" "r"
 		s = Settings "DOCK" "DOCKSIDE"  "int" "r"		
 		
@@ -554,8 +620,9 @@ rollout rLauncher "Scripts"
 		
 		initDotNet()
 		
-		z = Settings "MAIN" "SHOW" "int" "r"
-		case z of (1: ckbAll.checked = true; 2: ckbFavorite.checked = true) 
+		c = Settings "MAIN" "SHOW" "" "r"
+		
+		if(c != "") do szCurrentCategory = c
 				
 		bindContextMenu()
 		
@@ -564,7 +631,9 @@ rollout rLauncher "Scripts"
 	
 		try(rScriptsLoader.pos = [x, y]) catch()
 		
-		if(ckbFavorite.checked == false) then buildScriptList() else buildFavoriteList()			
+		szCategoriesPath = getDirectories (szScriptsDir + filterPrefix + "*")
+						
+		changeCategory szCurrentCategory	
 	)
 	on rLauncher close do
 	(
@@ -699,21 +768,11 @@ rollout rLauncher "Scripts"
 		edtFindScript.text = ""
 		edtFindScript.Focus()
 	)
-	on ckbAll changed a do
+
+	
+	on btnFilter pressed do
 	(
-		ckbAll.checked = true
-		ckbFavorite.checked = false
-		displayList 1
-		edtFindScript.Focus()
-		edtFindScript.text = ""
-	)
-	on ckbFavorite changed a do
-	(
-		ckbFavorite.checked = true
-		ckbAll.checked = false
-		displayList 2
-		edtFindScript.Focus()
-		edtFindScript.text = ""
+		showCategoriesMenu()
 	)
 	on tmrFocus tick do
 	(
