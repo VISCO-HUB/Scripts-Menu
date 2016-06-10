@@ -61,6 +61,10 @@ HELP = \help\scriptsLauncher.html
 
 + Added: Category Custom for add custom scripts=
 
+[1.3.2]
+
+* Improved INSTALL.mcr=
+
 [ABOUT]
 
 - Run any ViscoCG script=
@@ -90,6 +94,7 @@ global szCurrentCategory = "All"
 	
 global szExt = ".ms"
 global szExt2 = ".mzp"
+global szExt3 = ".mcr"
 
 
 ----------------------------------------------------------------------------------------------------
@@ -97,6 +102,7 @@ try(cui.UnRegisterDialogBar rScriptsLoader) catch()
 try(closeRolloutFloater rScriptsLoader)catch()
 global szScriptsPath = #()
 global szInstallsPath = #()
+global szInstallsToolBar = #()
 global szCategoriesPath = #()
 global szTestPath = #()
 global szTempScriptspath = #()
@@ -109,7 +115,7 @@ global rInstalls
 global rTest
 global rSettings
 global rAbout
-global rScriptsLoader = newRolloutFloater "Menu" 235 650
+global rScriptsLoader = newRolloutFloater "Menu" 235 575
 
 ----------------------------------------------------------------------------------------------------
 
@@ -176,7 +182,8 @@ fn initTextBox textBox =
 	textBox.ReadOnly = true
 )	
 
-fn displayInfo szScriptPath =
+
+fn displayInfo szScriptPath tb: false cat:"" =
 (
 	try(DestroyDialog rNotify)catch()
 	
@@ -185,10 +192,14 @@ fn displayInfo szScriptPath =
 	if(scriptInfo[1] == "" and scriptInfo[2] == "") do
 	(
 		try(DestroyDialog rNotify)catch()
+		
+		if(tb) do return messageBox "Toolbar button installed!" title: "Success!" beep: false
 		return messageBox "No info about this script!" title: "Sorry!"
 	)
 		
 	global script = szScriptPath
+	global toolbar = tb
+	global category = cat
 	global szScriptHelpFile = ""
 	
 	rollout rNotify "Info" 
@@ -207,20 +218,48 @@ fn displayInfo szScriptPath =
 			i = scriptInfo			
 			
 			szStat = ""
-			szStat = "Name:\t" + i[1] + "\r\n"
+			
+			sep = "\r\n\r\n_______________________________________\r\n\r\n"
+			
+			p = getFilenamePath(getThisScriptFilename()) + i[7]
+			isHelp = i[7] != "" and doesFileExist p
+			
+			if(toolbar) do 
+			(
+				szStat += "Toolbar button success installed !"
+				szStat += sep
+				szStat += "How to add button on tool bar:\r\n"
+				szStat += "\r\n1. Go to \"Customize\""
+				szStat += "\r\n2. Choose \"Customize User Interface\""
+				szStat += "\r\n3. Choose tab \"Toolbars\""
+				szStat += "\r\n4. Select category \"[" + category + "]\" in the end of list"
+				szStat += "\r\n5. Drag&Drop \"" + i[1]  + "\" to your tool bar"
+				szStat += sep
+				
+				if(isHelp) do
+				(
+					szStat += "Important:\r\n\r\n"
+					szStat += "Please read help for " + i[1] + " in About section!"
+					szStat += sep
+				)
+			)
+			
+			szStat += "Name:\t" + i[1] + "\r\n"
 			szStat += "Author:\t" + i[2] + "\r\n"
 			szStat += "Version:\t" + i[3] + "\r\n"
-			if(i[6] != "") do szStat += "Dev.:\t" + i[6] + "\r\n"
+			if(i[6] != "") do szStat += "Dev.:\t" + i[6]
 			if(i[4].count > 0) do
 			(
-				szStat += "\r\nAbout:\r\n\r\n" 
+				szStat += sep
+				
+				szStat += "About:\r\n\r\n" 
 				
 				szStat += parseIniLine i[4]
 			)
 			
 			
 			p = getFilenamePath(getThisScriptFilename()) + i[7]
-			if(i[7] != "" and doesFileExist p) do
+			if(isHelp) do
 			(
 				btnScriptHelp.enabled = true
 				btnScriptHelp.tooltip = "Help is available for this script"
@@ -511,7 +550,7 @@ rollout rLauncher "Scripts"
 		(
 			i = getScriptIniInfo szTempScriptspath[id]
 			
-			szHelp = (getFilenamePath (getThisScriptFilename())) + i[7]
+			szHelp = (getFilenamePath (szTempScriptspath[id])) + i[7]
 			
 			if(i[7] == "" or doesFileExist szHelp == false) do return  messageBox "No help for this script!" title: "Sorry."
 			
@@ -582,7 +621,7 @@ rollout rLauncher "Scripts"
 		
 		if(id == 0 or (i[1] == "" and i[2] == "")) do contextMenuItem contextMenu "Info about script" enabled: false	
 		
-		if(id == 0 or i[7] == undefined or i[7] == "" or (doesFileExist ((getFilenamePath s) + i[7])) == false) do contextMenuItem contextMenu "Help for script" enabled: false
+		if(id == 0 or i[7] == undefined or i[7] == "" or (doesFileExist ((getFilenamePath szTempScriptspath[id]) + i[7])) == false) do contextMenuItem contextMenu "Help for script" enabled: false
 					
 		lbxScriptList.ContextMenuStrip = contextMenu	
 	)
@@ -980,15 +1019,23 @@ rollout rInstalls "Installs"
 		button btnInstall "Install"
 	)
 	
+	group "Install Toolbar Script"
+	(
+		dropdownlist ddlToolBarScripts ""
+		button btnInstallToolbar "Install"
+	)
+	
 	on rInstalls open do
 	(
-		i = getFiles(szInstallsDir + "\*" + szExt2)
-		
-		szInstallsPath = #("")
-		
-		join szInstallsPath i
-		
+		szInstallsPath= getFiles(szInstallsDir + "\*" + szExt2)			
 		ddlInstalls.items = for z in szInstallsPath collect (getFilenameFile z)
+		
+		
+		szInstallsToolbar = getFiles(szInstallsDir + "\*" + szExt3)
+		ddlToolBarScripts.items = for z in szInstallsToolbar collect (getFilenameFile z)
+		
+		rLauncher.lbxScriptList.Update()
+		rLauncher.lbxScriptList.Refresh()
 	)
 	
 	on btnInstall pressed do
@@ -996,6 +1043,21 @@ rollout rInstalls "Installs"
 		i = ddlInstalls.selection
 		
 		if(szInstallsPath[i] != undefined and szInstallsPath[i] != "" and doesFileExist szInstallsPath[i]) do fileIn szInstallsPath[i] 
+	)
+	
+	on btnInstallToolbar pressed do
+	(
+		i = ddlToolBarScripts.selection
+		
+		if(szInstallsToolbar[i] != undefined and szInstallsToolbar[i] != "" and doesFileExist szInstallsToolbar[i]) do
+		(			
+			launch = getIniSetting szInstallsToolbar[i]  "INFO" "LAUNCH"
+			cat = getIniSetting szInstallsToolbar[i]  "INFO" "CAT"
+			
+			fileIn szInstallsToolbar[i] 
+			
+			displayInfo launch tb:true cat: cat			
+		)
 	)
 )
 
@@ -1023,6 +1085,9 @@ rollout rTest "Test"
 		join szTestPath i
 		
 		ddlTest.items = for z in szTestPath collect (getFilenameFile z)
+		
+		rLauncher.lbxScriptList.Update()
+		rLauncher.lbxScriptList.Refresh()
 	)
 	
 	on btnTest pressed do
@@ -1109,7 +1174,8 @@ rollout rSettings "Settings"
 		if(u != "") do cbxScriptsUpdated.checked = rLauncher.Settings "MAIN" "NOTIFYUPDATED"  "bool" "r"
 		
 		
-		
+		rLauncher.lbxScriptList.Update()
+		rLauncher.lbxScriptList.Refresh()
 	)
 	
 	on tmrNotify tick do

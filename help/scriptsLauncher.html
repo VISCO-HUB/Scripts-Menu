@@ -1,0 +1,320 @@
+<!--
+
+Help file
+Author: MastaMan
+
+-->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+
+	location.replace("#home"); 
+		
+	function setActive()
+	{
+		var a = document.getElementsByClassName("nav-active")
+		for(var i = 0; i < a.length; i++)  
+		{
+			a[i].className = "nav"	
+		}
+		
+		var a = document.querySelectorAll(".menu a")
+
+		for(var i = 0; i < a.length; i++)  
+		{
+			h = a[i].getAttribute("href")
+			x = window.location.hash
+
+			if(h == x)
+			{		
+				a[i].className = "nav-active"
+			}		
+		}				
+	}
+	
+	function startBind()
+	{		
+		var a = document.querySelectorAll("a")
+
+		for(var i = 0; i < a.length; i++)  
+		{
+			a[i].onmouseout =function () {setActive()}
+		}
+	}
+	
+	setTimeout("startBind()",200)
+
+</script>
+<style>
+.item {
+	padding: 0px; display: none; /* HIDE ALL CONTENT */
+}
+body {
+	background: #444;
+	color: #E9E9E9;
+	font-family: Segoe, "Segoe UI", "DejaVu Sans", "Trebuchet MS", Verdana, sans-serif;
+	font-size: 14px;
+	margin: 0px;
+	padding: 0px;
+	margin-left: 250px;
+}
+img {
+	border: 1px solid #E9E9E9;
+	margin: 20px;
+}
+html {
+	margin: 0px;
+	padding: 0px;
+}
+h1, h2, h3 {
+	color: #FFFFFF;
+	margin: 0px;
+	padding: 15px 0 15px 0;
+}
+a:link, a:visited {
+	color: #FFFFFF;
+	text-decoration: underline;
+}
+a:visited {
+	text-decoration: underline;
+}
+a:hover {
+	text-decoration: none;
+}
+a:active {
+	text-decoration: underline;
+}
+.menu {
+	left: 0px;
+	top: 0px;
+	position: fixed;
+	width: 190px;
+	height: 100%;
+	padding: 0px 20px;
+	border-right: 1px solid #6A6A6A;
+}
+.menu li {
+	padding: 0px 0px 0px 25px;
+	line-height: 40px;
+}
+a.nav, a.nav-active {
+	margin: 0px 0px 0px -25px;
+	padding: 0px 5px 0px 25px;
+	text-decoration: none;
+	color: #9C9C9C;
+	display: block;
+}
+a.nav:hover, a.nav-active {
+	background: #6A6A6A;
+	border-left: 4px solid #FFFFFF;
+	padding: 0px 5px 0px 21px;
+	color: #FFFFFF;
+}
+a.nav:hover {
+	background: none;
+}
+div:target {
+	display: block;
+}
+.menu ul {
+	margin: 0px 0px 0px -20px;
+	padding: 0px;
+	list-style: none;
+}
+.menu li {
+	width: 205px;
+}
+.content {
+}
+.note {
+	background: #6A6A6A;
+	border: 1px solid #FFFFFF;
+	width: 60%;
+	padding: 10px;
+	margin: 20px;
+}
+.note h3 {
+	font-size: 14px;
+	margin: 0px;
+	padding: 0px 0px 15px 0px;
+	color: #FDE824;
+}
+</style>
+<title>Window Placer</title>
+</head>
+
+<body>
+<div class="menu">
+  <h1>Sections:</h1>
+  <ul>
+    <li><a href="#home" class="nav-active" >Scripts Launcher</a></li>
+    <li><a href="#install" class="nav" >Install</a></li>
+    <li><a href="#how_to_use" class="nav" >How to Use</a></li>
+    <li><a href="#search" class="nav" >Search</a></li>
+    <li><a href="#categories" class="nav" >Categories</a></li>
+    <li><a href="#favorites" class="nav" >Favorites</a></li>
+    <li><a href="#custom" class="nav" >Custom scripts</a></li>
+     <li><a href="#installs" class="nav" >Installs</a></li>
+    <li><a href="#updates" class="nav" >Updates</a></li>
+    <li><a href="#scripts_info" class="nav" >Scripts Info</a></li>
+    <li><a href="#settings" class="nav" >Settings</a></li>
+    <li><a href="#about" class="nav" >About</a></li>
+  </ul>
+</div>
+<div class="content">
+  <div class="item" id="home">
+    <h1>Scripts Launcher</h1>
+    With Scripts Launcher you can run, search, sort by category, add to&nbsp;favorites&nbsp;and update scripts.<br>
+    You no longer need to create a button in the interface, or search for files of scripts, all is now in one place. <br>
+    <br>
+    Scripts Launcher get list of scripts from:
+    <div class="note">
+      <h3>Network:</h3>
+      \\visco.local\data\Instal_Sync\scripts\scripts\ </div>
+    <h1>Features:</h1>
+    <ul>
+      <li> Scripts list</li>
+      <li>Quick search</li>
+      <li>Filter by category</li>
+      <li>Favorites</li>
+      <li>Updates</li>
+      <li>Dock window</li>
+      <li>Quick info and help about each script</li>
+      <li>Quick install *.mzp and *.mcr plugins</li>
+      <li>Notification when script updated or added</li>
+      <li>Remember window position</li>
+      <li>Test scripts feature</li>
+      <li>Savable settings</li>
+      <li>And other</li>
+    </ul>
+  </div>
+  <div class="item" id="install">
+    <h1>Install</h1>
+    <ol>
+      <li>Drag&amp;Drop in to 3Ds Max <strong>INSTALL.mcr</strong></li>
+      <li>Go to menu <strong>Customize</strong> &rarr; <strong>Customize User Interface...</strong></li>
+      <li>Open tab <strong>Toolbars</strong></li>
+      <li>Choose <strong>[VISCOCG]</strong> category</li>
+      <li>Create new tool bar, press <strong>New...</strong></li>
+      <li>Drag&amp;Drop <strong>Scrpts Lanuncher</strong> in to created tool bar</li>
+      <li>Save settings, press <strong>Save...</strong></li>
+    </ol>
+    <img src="scriptsLauncher/install.png" width="571" height="561" alt=""/></div>
+  <div class="item" id="how_to_use">
+    <h1>How to Use</h1>
+    <ol>
+      <li>Run Scripts Lanucher<br>
+        <img src="scriptsLauncher/run.png" width="33" height="33" alt=""/></li>
+      <li>Select script from list</li>
+      <li>Press Enter, or press <strong>Run Script</strong> for launch the script.</li>
+    </ol>
+    <h3><img src="scriptsLauncher/how_to_use.gif" alt=""/></h3>
+  </div>
+  <div class="item" id="search">
+    <h1>Search</h1>
+    With search feature you can find script by part of name.<br>
+    When you type part of script name in search form, in the list shows the scripts found.<br>
+    <img src="scriptsLauncher/search.gif" alt=""/> <br>
+    For clear search form press Esc or button <strong>Clear</strong>.<br>
+    <img src="scriptsLauncher/clear.png" width="31" height="33" alt=""/><br>
+  </div>
+  <div class="item" id="categories">
+    <h1>Categories</h1>
+    With categories feature you can filter scripts by team name .<br>
+    When you choose category you can see scipts depends only for current team.<br>
+    Also has three service categories: All, Favorite and Custom. <br>
+    <img src="scriptsLauncher/categories.gif"> <br>
+    All - displays all scripts.<br>
+    Favorite - displays only scripts which marked as favorite.<br>
+    Custom - displays scripts added from your pc.<br>
+    <br>
+  </div>
+  <div class="item" id="favorites">
+    <h1>Favorites</h1>
+    Commonly used script or set of scripts for the current job, you can save to favorites. <br>
+    It helps avoid getting lost in a large list of scripts.<br>
+    <h3>How to add to Favorites:</h3>
+    <ul>
+      <li>Select script in list</li>
+      <li>Press right mouse button &rarr; <strong>Add to Favorite</strong></li>
+      <li>Open tab <strong>Favorite</strong></li>
+    </ul>
+    <h3>How to remove from Favorites:</h3>
+    <ul>
+      <li>Open tab <strong>Favorite</strong></li>
+      <li>Select script in list</li>
+      <li>Press right mouse button &rarr; <strong>Remove from Favorite</strong></li>
+    </ul>
+    <img src="scriptsLauncher/favorite.gif"  alt=""/> </div>
+    
+    
+  <div class="item" id="custom">
+    <h1>Custom scripts</h1>
+    You can add to Scripts Launcher custom scripts located on your pc.
+    <h3>How to add to Custom:</h3>
+    <ul>
+      <li>Select <strong>Custom</strong> category</li>
+      <li>Press right mouse button → <strong>Add to Custom</strong></li>
+      <li>Select script </li>
+    </ul>
+    <h3>How to delete from Custom:</h3>
+    <ul>
+      <li>Select <strong>Custom</strong> category</li>
+      <li>Press right mouse button &rarr; <strong>Remove from Custom</strong></li>      
+    </ul>
+    
+    <img src="scriptsLauncher/custom.gif"  alt=""/> </div>
+    
+  <div class="item" id="installs">
+    <h1>Installs</h1>
+    In section Installs provided some scripts which can be installed as toolbar button or plugin.<br><br>
+	Select from dropdown menu needes script and press Install. <br>
+    After installation you can see information about success process and how to add button on toolbar.<br>
+    
+    <img src="scriptsLauncher/installs.gif"> </div>
+    
+  <div class="item" id="updates">
+    <h1>Updates</h1>
+    <h3>Automatically update:</h3>
+    You get latest versions of scripts automatically when open Scripts Launcher.<br>
+    <br>For get latest version of scripts or receive new, open rollout <strong>Update</strong> and press the button <strong>Update Scripts</strong>. <br>
+    If new releases of scripts founded you receive notification.<br>
+    <img src="scriptsLauncher/update.gif" width="295" height="346"><br>
+    For view detail information about new releases, select script in list press right mouse button and choose <strong>Info about script</strong> option.<br>
+
+  </div>
+  <div class="item" id="scripts_info">
+    <h1>Scripts Info</h1>
+    <img src="scriptsLauncher/script_info.gif" alt=""/> <br>
+    For display information about script:
+    <ul>
+      <li>Select script</li>
+      <li>Open context menu</li>
+      <li>Press <strong>Info about script</strong></li>
+    </ul>
+    In information  window you can find information about: releases, version, author, help, overview.<br>
+    For the old scripts, or scripts copied manually this info not displayed. It works only for scripts adopted for Scripts Launcher.</div>
+  <div class="item" id="settings">
+    <h1>Settings</h1>
+    <img src="scriptsLauncher/settings.png" width="257" height="196" alt=""/><br>
+    <strong>Dock Launcher</strong> - pin Scripts Launcher window to left or right side of screen. <strong><br>
+    Notify Me When</strong> - turn on/off notification about updated scripts and newest scripts.<br>
+    <strong>Open Scripts Folder</strong> - open " d:\tools\3dsmax\VSscripts " directory </div>
+  <div class="item" id="about">
+    <h1>About</h1>
+    Scripts Launcher<br>
+    Author: MastaMan<br>
+    Version: 1.x.x <br>
+    <br>
+    Revision: 10.06.2016<br>
+    <br>
+    ViscoCG
+    
+    <br>
+    <br>
+  </div>
+</div>
+</body>
+</html>
