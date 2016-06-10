@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.3.0
+VERSION = 1.3.1
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = \help\scriptsLauncher.html
@@ -57,11 +57,16 @@ HELP = \help\scriptsLauncher.html
 + Added: Filter by category=
 - Removed: Buttons All and Favorite=
 
+[1.3.1]
+
++ Added: Category Custom for add custom scripts=
+
 [ABOUT]
 
-- Run any script from VSscripts directory =
+- Run any ViscoCG script=
 - Search =
 - Favorite =
+- Categories =
 - Updates =
 - Notification =
 - Info about scripts =
@@ -73,12 +78,13 @@ HELP = \help\scriptsLauncher.html
 
 
 global szScriptsDir = getFilenamePath (getThisScriptFilename()) + @"scripts\"
+global szScriptsName = filenameFromPath (getThisScriptFilename())
 global szInstallsDir = szScriptsDir + @"installs\"
 global szTestDir = szScriptsDir + @"test\"
 global szIconFilter24i = szScriptsDir + @"\img\filter_24i.bmp"
 global szIconFilter24a = szScriptsDir + @"\img\filter_24a.bmp"
 	
-global iniSettingsFile = @"C:\temp\scripts\ini\menu.ini"
+global iniSettingsFile = szScriptsDir + (sysInfo.username) + "_" + szScriptsName + ".ini"
 global filterPrefix = "_"
 global szCurrentCategory = "All"
 	
@@ -399,7 +405,7 @@ rollout rLauncher "Scripts"
 		for x in r do	
 		(
 			li = dotNetObject "System.Windows.Forms.ListViewItem" ""
-			li.text = (i as string + ". " + getFilenameFile x)
+			li.text = (i as string + ". " + getFilenameFile x) + (if(not doesFileExist x) then " (Not Found)" else "")
 		
 			append rows li		
 			i += 1
@@ -407,6 +413,19 @@ rollout rLauncher "Scripts"
 		
 		lbxScriptList.Items.addRange rows
 	)	
+	
+	fn findCategory c = 
+	(
+		f = undefined
+		for i in szCategoriesPath where c == getCategory i do
+		(
+			f = i
+			exit
+		)
+		
+		return f
+	)	
+	
 	
 	fn buildScriptList c =
 	(											
@@ -423,6 +442,40 @@ rollout rLauncher "Scripts"
 		szTempScriptspath = szScriptsPath
 		
 		addToLbxList szScriptsPath
+	)
+	
+	fn buildCustomList =
+	(
+		szScriptsPath = (Settings "CUSTOM" "" "" "a")
+					
+		szTempScriptspath = szScriptsPath
+		
+		addToLbxList(szScriptsPath)	
+	)
+	
+	fn removeFromCustom =
+	(
+		id = getSelectedId()
+		
+		if(id != 0) do 
+		(
+			Settings "CUSTOM" szTempScriptspath[id] "false" "d"
+			Settings "FAVORITE" szTempScriptspath[id] "false" "d"
+		)
+		
+		
+		buildCustomList()
+	)
+	
+	fn addToCustom =
+	(	
+		f = getOpenFileName caption:"Choose Custom Script" types: "*.ms (MaxScript)|*.ms"
+				
+		if(f == undefined) do return false
+			
+		Settings "CUSTOM" f "true" "w"
+		
+		buildCustomList()
 	)
 	
 	fn buildFavoriteList =
@@ -466,25 +519,51 @@ rollout rLauncher "Scripts"
 		)
 	)
 	
+	fn contextMenuItem m n enabled: true =
+	(
+		item = undefined	
+		c = m.Items.Count - 1
+		for i = c to 0 by - 1 where c > 0 do
+		(
+			ii = m.Items.Item[i].Text
+			if(ii == n) do
+			(
+				item = m.Items.Item[i]
+				item.Enabled = enabled
+				exit
+			)
+		)
+		
+		return item
+	)
+	
 	fn bindContextMenu =
 	(
 		id = getSelectedId()
-			
 		
 		contextMenu = dotNetObject "System.Windows.Forms.ContextMenuStrip"	
+		
+		if(szCurrentCategory == "Custom") do
+		(			
+			dotNet.addEventHandler (contextMenu.Items.Add("Add to Custom")) "Click" addToCustom
+			dotNet.addEventHandler (contextMenu.Items.Add("Remove from Custom")) "Click" removeFromCustom
+			contextMenu.Items.Add("-")
+		)			
+		
 		if(szCurrentCategory != "Favorite") then
 		(
-			dotNet.addEventHandler (contextMenu.Items.Add("Add to favorite")) "Click" addToFavorite
+			dotNet.addEventHandler (contextMenu.Items.Add("Add to Favorite")) "Click" addToFavorite
 		)
 		else
 		(
-			dotNet.addEventHandler (contextMenu.Items.Add("Remove from favorite")) "Click" removeFromFavorite
+			dotNet.addEventHandler (contextMenu.Items.Add("Remove from Favorite")) "Click" removeFromFavorite
 		)
-		
+			
 		contextMenu.Items.Add("-")
 		dotNet.addEventHandler (contextMenu.Items.Add("Info about script")) "Click" showScriptInfo
 		dotNet.addEventHandler (contextMenu.Items.Add("Help for script")) "Click" showScriptHelp
-		
+			
+			
 		/* Enable/ Disable StripMenu items*/
 		
 		s = getThisScriptFilename()
@@ -493,14 +572,18 @@ rollout rLauncher "Scripts"
 		if(id > 0) do i = getScriptIniInfo szTempScriptspath[id]
 
 			
-		if(id == 0) do contextMenu.Items.Item[0].Enabled = false
-		if(id == 0 or (i[1] == ""and i[2] == "")) do contextMenu.Items.Item[2].Enabled = false
+		if(id == 0) do 
+		(
+			contextMenuItem contextMenu "Add to Favorite" enabled: false	
+			contextMenuItem contextMenu "Remove from Favorite" enabled: false	
+			
+			contextMenuItem contextMenu "Remove from Custom" enabled: false	
+		)
 		
-		if(id == 0 or i[7] == undefined or i[7] == "" or (doesFileExist ((getFilenamePath s) + i[7])) == false) do contextMenu.Items.Item[3].Enabled = false
+		if(id == 0 or (i[1] == "" and i[2] == "")) do contextMenuItem contextMenu "Info about script" enabled: false	
 		
-			
-			
-			
+		if(id == 0 or i[7] == undefined or i[7] == "" or (doesFileExist ((getFilenamePath s) + i[7])) == false) do contextMenuItem contextMenu "Help for script" enabled: false
+					
 		lbxScriptList.ContextMenuStrip = contextMenu	
 	)
 	
@@ -577,6 +660,7 @@ rollout rLauncher "Scripts"
 		
 		case c of
 		(
+			"Custom": buildCustomList()
 			"Favorite": buildFavoriteList()			
 			default: buildScriptList c
 		)	
@@ -585,28 +669,37 @@ rollout rLauncher "Scripts"
 		edtFindScript.text = ""
 	)
 	
+	global rcCatChecked = undefined
+	
+
+	fn rcCheckItem c = (szCurrentCategory == c) as string	
+	
 	fn showCategoriesMenu =
 	(			
 		p = btnFilter.pos
 		p.y += 24
 		
 		ex = "rcmenu rcCategories \n(\n"		
-		ex += "menuItem rcAll \"All\" \n"
+		ex += "menuItem rcAll \"All\" checked:" + rcCheckItem "All" + " \n"
 		ex += "on rcAll picked do rLauncher.changeCategory \"All\"\n"
-		ex += "menuItem rcFavorite \"Favorite\" \n"
+		ex += "menuItem rcFavorite \"Favorite\" checked:" + rcCheckItem "Favorite" + " \n"
 		ex += "on rcFavorite picked do rLauncher.changeCategory \"Favorite\"\n"
 		ex += "separator sep1\n"	
 		
 		for i in 1 to szCategoriesPath.count do
 		(	
+			n = "rcCat" + i as string 			
 			c = getCategory szCategoriesPath[i]
-			ex += "menuItem rcCat" + i as string +  " \"" + c+ "\"\n" 
-			ex += "on rcCat" + i as string + " picked do rLauncher.changeCategory \"" + c + "\"\n"	
+					
+			ex += "menuItem " + n +  " \"" + c+ "\" checked: " + rcCheckItem c + "\n" 
+			ex += "on " + n + " picked do (\n rLauncher.changeCategory \"" + c + "\"  \n) \n"	
 		)
-		
+		ex += "separator sep2\n"
+		ex += "menuItem rcCustom \"Custom\" checked:" + rcCheckItem "Custom" + " \n"
+		ex += "on rcCustom picked do rLauncher.changeCategory \"Custom\"\n"		
 		ex += "\n )\n popUpMenu rcCategories rollout: rLauncher pos:" + p as string + "\n"
 		
-		execute ex
+		execute ex	
 	)
 
 ----------------------------------------------------------------------------------------------------	
@@ -821,7 +914,7 @@ fn notifyScripts =
 
 		v = getScriptIniInfo i
 						
-		z = rLauncher.Settings "SCRIPTS" n "string" "r"
+		z = rLauncher.Settings "UPDATES" n "string" "r"
 		
 		if(z != "" and v[3] > z) then
 		(
@@ -844,7 +937,7 @@ fn notifyScripts =
 			szNew += szUpdated += "_______________________________________\r\n\r\n" 
 		)
 				
-		rLauncher.Settings "SCRIPTS" n v[3] "w"
+		rLauncher.Settings "UPDATES" n v[3] "w"
 	)
 	
 	m1 = (filterString szNew "\t\r\n").count
@@ -971,7 +1064,7 @@ rollout rSettings "Settings"
 		checkbox cbxScriptsAdded "New Scripts Added" checked: true
 	)
 	
-	button btnOpenScripts "Open Scripts Folder"
+	button btnOpenScripts "Open Scripts Folder" enabled: false
 	timer tmrNotify active: true interval: 500
 
 	on btnOpenScripts pressed do
