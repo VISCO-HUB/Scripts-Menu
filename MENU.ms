@@ -231,9 +231,9 @@ fn displayInfo szScriptPath tb: false cat:"" =
 			
 			if(toolbar) do 
 			(
-				szStat += "Toolbar button success installed !"
+				szStat += "Script installed success and added to interface!"
 				szStat += sep
-				szStat += "How to add button on tool bar:\r\n"
+				szStat += "If interface button not deployed:\r\n"
 				szStat += "\r\n1. Go to \"Customize\""
 				szStat += "\r\n2. Choose \"Customize User Interface\""
 				szStat += "\r\n3. Choose tab \"Toolbars\""
@@ -1173,9 +1173,8 @@ rollout rInstalls "Installs"
 			
 			if(launch == "" or cat == "" or macro =="" or txt == "") do return messageBox "Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!"
 			
-			p = @"c:\temp\"
-			makeDir @"c:\temp\"
-					
+			p = getDir (#downloads)
+								
 			p += "install_" + timeStamp() as string + ".mcr"
 			
 			s = "macroScript " + macro + "\n"
