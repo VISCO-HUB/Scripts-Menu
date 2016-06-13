@@ -7,7 +7,50 @@ Icon:#("UVWUnwrapView",19)
 	szScript = @"\\visco.local\data\Instal_Sync\scripts\MENU.ms"
 	try(fileIn(szScript)) catch(messageBox "Lost network connection!" title: "Warning!")
 )
+
+fn addToolBarButton macro cat txt =
+(
+	f = cui.getConfigFile() 
+	cui.loadConfig f
+	cui.saveConfigAs f
 	
+	l = "<Item typeID=\"2\" type=\"CTB_MACROBUTTON\" width=\"0\" height=\"0\" controlID=\"0\" macroTypeID=\"3\" macroType=\"MB_TYPE_ACTION\" actionTableID=\"647394\" imageID=\"-1\" imageName=\"\" actionID=\"" + macro + "`[" + cat + "]\" tip=\"" + txt + "\" label=\"" + txt + "\" />"
+	
+	file = MemStreamMgr.openFile f
+	size = file.size()
+	MemStreamMgr.close file
+
+	stream = openFile f mode:"r+"
+	
+	if((skipToString stream l) == undefined) do
+	(
+		seek stream 0 
+		
+		c = "</Items>"
+		
+		skipToString stream c
+			
+		pos = filePos stream - c.count
+		
+		seek stream pos
+		
+		previousContent = readChars stream (size - pos)
+		
+		seek stream pos
+		
+		format ("\n\t\t" + l + "\n") to:stream
+		format previousContent to:stream
+	)
+	
+	close stream
+	
+	cui.loadConfig f
+	cui.saveConfigAs f
+	cui.setConfigFile f
+)
+
+addToolBarButton "runScriptsLauncher" "VISCOCG" "Scripts Launcher"
+
 rollout rNotify "Installed Success!" 
 (		
 	dotNetControl edtStat "System.Windows.Forms.Textbox" width:350 height:460 align:#center 
@@ -43,7 +86,7 @@ rollout rNotify "Installed Success!"
 		
 	on rNotify open do
 	(
-		szScriptHelpFile = getFilenamePath (getThisScriptFilename()) + @"help\scriptsLauncher.html"
+		szScriptHelpFile = @"\\visco.local\data\Instal_Sync\scripts\help\scriptsLauncher.html"
 			
 		if(doesFileExist szScriptHelpFile) do 
 		(
@@ -57,7 +100,7 @@ rollout rNotify "Installed Success!"
 		m = ""
 		m += "\r\nScripts Launcher installed succes!"
 		m += s
-		m += "How to add button on tool bar:\r\n"
+		m += "If no added button on tool bar automatically:\r\n"
 		m += "\r\n1. Go to \"Customize\""
 		m += "\r\n2. Choose \"Customize User Interface\""
 		m += "\r\n3. Choose tab \"Toolbars\""
@@ -70,7 +113,7 @@ rollout rNotify "Installed Success!"
 		m += "Installed from:\r\n\r\n"
 		m += getFilenamePath (getThisScriptFilename()) 
 		m += s	
-		m += "\t\tScripts Launcher\r\n\t\tMastaMan\r\n\t\tViscoCG\r\n\t\tGNU GPL v3.0"
+		m += "\t\tScripts Launcher\r\n\r\n\t\tMastaMan\r\n\r\n\t\tViscoCG\r\n\t\tGNU GPL v3.0"
 	
 		edtStat.text = m				
 	)

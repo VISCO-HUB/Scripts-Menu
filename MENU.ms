@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.3.2
+VERSION = 1.3.3
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = \help\scriptsLauncher.html
@@ -64,6 +64,11 @@ HELP = \help\scriptsLauncher.html
 [1.3.2]
 
 * Improved INSTALL.mcr=
++ Added: Installation scripts to interface
+
+[1.3.3]
+
+- BugFix: Notify updated scripts
 
 [ABOUT]
 
@@ -939,10 +944,17 @@ rollout rUpdate "Update"
 
 fn notifyScripts =
 (
-	if(rSettings.cbxScriptsUpdated.checked == false) do return false
+		upd = rSettings.cbxScriptsUpdated.checked
+		new = rSettings.cbxScriptsAdded.checked
 	
-	f = getFiles(szScriptsDir + "\*" + szExt)
-	 
+	if(new == false and upd == false) do return false
+	
+	f  =#()
+	for i in szCategoriesPath do
+	(
+		join f (getFiles(i + "*" + szExt))
+	)
+		 
 	szUpdated = ""
 	szNew = ""
 	m = ""
@@ -955,7 +967,7 @@ fn notifyScripts =
 						
 		z = rLauncher.Settings "UPDATES" n "string" "r"
 		
-		if(z != "" and v[3] > z) then
+		if(z != "" and v[1] != "" and v[3] > z and upd == true) then
 		(
 			szUpdated += "\t" + n + " " + v[3] + "\r\n\r\n"
 			szUpdated += "Change Log:\r\n\r\n"
@@ -964,16 +976,15 @@ fn notifyScripts =
 			szUpdated += parseIniLine r + "\r\n"
 			szUpdated += "_______________________________________\r\n\r\n" 
 		)
-		else if (v[3] != "" and z == "") then 
-		(
-			v = getScriptIniInfo i
+		else if (v[1] != "" and v[3] != "" and z == "" and new == true) then 
+		(			
 			szNew += "\t" + n + " " + v[3] + "\r\n\r\n"
 			
 			szNew += "Change Log:\r\n\r\n"
 				
 			r = getScriptIniInfo i releaseInfo:v[3]
 			szNew += parseIniLine r + "\r\n"
-			szNew += szUpdated += "_______________________________________\r\n\r\n" 
+			szNew += "_______________________________________\r\n\r\n" 
 		)
 				
 		rLauncher.Settings "UPDATES" n v[3] "w"
@@ -995,14 +1006,27 @@ fn notifyScripts =
 		rollout rNotify "New Releases" 
 		(
 			dotNetControl edtStat "System.Windows.Forms.Textbox" width:260 height:260 align:#center readOnly: true 
-			button btnCopy "Copy" align: #left width: 50 across: 2
+			checkbox cbxShowOnStartup "Show on start" align: #left  across: 2
 			button btnOK "Ok" align: #right  width: 35
+			
+			on cbxShowOnStartup changed s do
+			(
+				rSettings.cbxScriptsUpdated.checked = s
+				rSettings.cbxScriptsAdded.checked = s
+				
+				rLauncher.Settings "MAIN" "NOTIFYUPDATED" s "w"	
+				rLauncher.Settings "MAIN" "NOTIFYNEW" s "w"
+			)
+			
 			
 			on btnOK pressed do try(DestroyDialog rNotify)catch()
 			on rNotify open do 
 			(	
 				initTextBox edtStat
 				edtStat.text = szStat	
+				
+				s = rSettings.cbxScriptsUpdated.checked  or rSettings.cbxScriptsAdded.checked
+				cbxShowOnStartup.checked = s
 			)
 			on btnCopy pressed do setClipBoardText edtStat.text			
 		)
