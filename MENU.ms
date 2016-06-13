@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.3.1
+VERSION = 1.3.2
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = \help\scriptsLauncher.html
@@ -193,7 +193,7 @@ fn displayInfo szScriptPath tb: false cat:"" =
 	(
 		try(DestroyDialog rNotify)catch()
 		
-		if(tb) do return messageBox "Toolbar button installed!" title: "Success!" beep: false
+		if(tb) do return messageBox "Script installed and added to interface!" title: "Success!" beep: false
 		return messageBox "No info about this script!" title: "Sorry!"
 	)
 		
@@ -1019,10 +1019,11 @@ rollout rInstalls "Installs"
 		button btnInstall "Install"
 	)
 	
-	group "Install Toolbar Script"
+	group "Install Script"
 	(
 		dropdownlist ddlToolBarScripts ""
-		button btnInstallToolbar "Install"
+		radiobuttons rdoInterfaceType "" labels: #("Main Toolbar", "Quad Menu")
+		button btnInstallToolbar "Install"			
 	)
 	
 	on rInstalls open do
@@ -1045,6 +1046,95 @@ rollout rInstalls "Installs"
 		if(szInstallsPath[i] != undefined and szInstallsPath[i] != "" and doesFileExist szInstallsPath[i]) do fileIn szInstallsPath[i] 
 	)
 	
+	fn writeFile f s =
+	(			
+		f = createFile f mode: "wt"
+
+		format(s as string) to:f
+
+		flush f
+		close f
+	)
+	
+	fn addToolBarButton macro cat txt =
+	(
+		f = cui.getConfigFile() 
+		cui.loadConfig f
+		cui.saveConfigAs f
+		
+		l = "<Item typeID=\"2\" type=\"CTB_MACROBUTTON\" width=\"0\" height=\"0\" controlID=\"0\" macroTypeID=\"3\" macroType=\"MB_TYPE_ACTION\" actionTableID=\"647394\" imageID=\"-1\" imageName=\"\" actionID=\"" + macro + "`[" + cat + "]\" tip=\"" + txt + "\" label=\"" + txt + "\" />"
+		
+		file = MemStreamMgr.openFile f
+		size = file.size()
+		MemStreamMgr.close file
+
+		stream = openFile f mode:"r+"
+		
+		if((skipToString stream l) == undefined) do
+		(
+			seek stream 0 
+			
+			c = "</Items>"
+			
+			skipToString stream c
+				
+			pos = filePos stream - c.count
+			
+			seek stream pos
+			
+			previousContent = readChars stream (size - pos)
+			
+			seek stream pos
+			
+			format ("\n\t\t" + l + "\n") to:stream
+			format previousContent to:stream
+		)
+		
+		close stream
+		
+		cui.loadConfig f
+		cui.saveConfigAs f
+		cui.setConfigFile f
+	)
+	
+	fn addQuadMenuButton macro cat txt =
+	(
+		quadMenu = menuMan.getViewportRightClickMenu #nonePressed
+		theMenu = quadMenu.getMenu 1
+
+		fn findMenuItem theMenu menuName =
+		(
+			for i in 1 to theMenu.numItems() where (theMenu.getItem i).getTitle() == menuName do return i
+			return 0
+		)
+
+		fn unregisterMenuItem theMenu menuName =
+		(	
+			try
+			(
+				for i in 1 to theMenu.numItems() do
+				(
+					if((theMenu.getItem i).getTitle() == menuName) do
+					(
+						theMenu.removeItemByPosition i 	
+
+						if((theMenu.getItem (i - 1)).getIsSeparator()) do theMenu.removeItemByPosition (i - 1)
+					)
+				)
+			)catch()
+		)
+
+		item = try(findMenuItem theMenu "Select &Similar")catch(6)
+
+		unregisterMenuItem theMenu txt
+		
+		quadItem = menuMan.createActionItem macro ("[" + cat + "]")
+			
+		theMenu.addItem quadItem (item += 1)
+			
+		menuMan.updateMenuBar()
+	)
+	
 	on btnInstallToolbar pressed do
 	(
 		i = ddlToolBarScripts.selection
@@ -1053,10 +1143,38 @@ rollout rInstalls "Installs"
 		(			
 			launch = getIniSetting szInstallsToolbar[i]  "INFO" "LAUNCH"
 			cat = getIniSetting szInstallsToolbar[i]  "INFO" "CAT"
+			macro = getIniSetting szInstallsToolbar[i]  "INFO" "MACRO"
+			txt = getIniSetting szInstallsToolbar[i]  "INFO" "TEXT"
+			ico = getIniSetting szInstallsToolbar[i]  "INFO" "ICON"
 			
-			fileIn szInstallsToolbar[i] 
+			if(launch == "" or cat == "" or macro =="" or txt == "") do return messageBox "Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!"
 			
+			p = @"c:\temp\"
+			makeDir @"c:\temp\"
+					
+			p += "install_" + timeStamp() as string + ".mcr"
+			
+			s = "macroScript " + macro + "\n"
+			s += "category:\"[" + cat + "]\" \n"
+			s += "toolTip:\"" + txt + "\" \n"
+			s += "buttontext:\"" + txt + "\" \n"
+			if(ico != "") do s += "Icon:" + ico + "\n"
+			s += "(\n"
+			s += "try(fileIn(@\"" + launch + "\"))catch(messageBox \"Lost network connection!\" title: \"Warning!\")	\n"
+			s += ")\n"
+			
+			writeFile p s
+			
+			fileIn p
+						
 			displayInfo launch tb:true cat: cat			
+			
+			
+			case rdoInterfaceType.state of
+			(
+				2: addQuadMenuButton macro cat txt												
+				default: addToolBarButton macro cat txt
+			)			
 		)
 	)
 )
