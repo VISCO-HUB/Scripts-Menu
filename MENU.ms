@@ -720,8 +720,8 @@ rollout rLauncher "Scripts"
 	
 	fn showCategoriesMenu =
 	(			
-		p = btnFilter.pos
-		p.y += 24
+		rcPoupPos = btnFilter.pos
+		rcPoupPos.y += 24
 		
 		ex = "rcmenu rcCategories \n(\n"		
 		ex += "menuItem rcAll \"All\" checked:" + rcCheckItem "All" + " \n"
@@ -741,7 +741,7 @@ rollout rLauncher "Scripts"
 		ex += "separator sep2\n"
 		ex += "menuItem rcCustom \"Custom\" checked:" + rcCheckItem "Custom" + " \n"
 		ex += "on rcCustom picked do rLauncher.changeCategory \"Custom\"\n"		
-		ex += "\n )\n popUpMenu rcCategories rollout: rLauncher pos:" + p as string + "\n"
+		ex += "\n )\n popUpMenu rcCategories rollout: rLauncher pos:" + rcPoupPos as string + "\n"
 		
 		execute ex	
 	)
