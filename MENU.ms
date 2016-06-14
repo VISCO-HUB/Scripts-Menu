@@ -89,6 +89,7 @@ HELP = \help\scriptsLauncher.html
 global szScriptsDir = getFilenamePath (getThisScriptFilename()) + @"scripts\"
 global szScriptsName = filenameFromPath (getThisScriptFilename())
 global szInstallsDir = szScriptsDir + @"installs\"
+global runCopyAsstes = szInstallsDir + "copy_assets.lnk"
 global szTestDir = szScriptsDir + @"test\"
 global szIconFilter24i = szScriptsDir + @"\img\filter_24i.bmp"
 global szIconFilter24a = szScriptsDir + @"\img\filter_24a.bmp"
@@ -143,6 +144,16 @@ fn getScriptIniInfo s releaseInfo: "" =
 	r = for i in (getINISetting s) where i != "ABOUT" and i != "SCRIPT" and i != "COPY" and i != "TEST" collect i
 	
 	return #(n, a, v, o, r, c, h, t)
+)
+
+fn writeFile f s =
+(			
+	f = createFile f mode: "wt"
+
+	format(s as string) to:f
+
+	flush f
+	close f
 )
 
 fn parseIniLine m = 
@@ -325,7 +336,7 @@ rollout rLauncher "Scripts"
 	dotNetControl edtFindScript "system.windows.forms.textBox" width: 165 height:26 across: 2 align:#left
 	dotNetControl btnFindClear "system.windows.forms.button" width:24 height:24  align: #right offset: [0, -2]
 	dotNetControl lbxScriptList "system.windows.forms.listView" height:330				
-	button btnRunScript "Run Script" width:200 height:34		
+	button btnRunScript "Run Script" width:200 height:34 offset: [-2, 0]	
 	timer tmrFocus "" interval: 200 active: true
 
 	
@@ -1067,7 +1078,7 @@ rollout rInstalls "Installs"
 	(
 		i = ddlInstalls.selection
 		
-		if(szInstallsPath[i] != undefined and szInstallsPath[i] != "" and doesFileExist szInstallsPath[i]) do fileIn szInstallsPath[i] 
+		if(i > 0  and szInstallsPath[i] != undefined and szInstallsPath[i] != "" and doesFileExist szInstallsPath[i]) do fileIn szInstallsPath[i] 
 	)
 	
 	fn writeFile f s =
@@ -1159,6 +1170,29 @@ rollout rInstalls "Installs"
 		menuMan.updateMenuBar()
 	)
 	
+	fn copyAssets a d =
+	(		
+		
+		f = @"c:\temp\"
+		makeDir f
+		
+		f += "install.bat"
+		
+		if(doesFileExist f) do deleteFile f
+		
+		s = ""
+		
+		for i in a do
+		(
+			s += "xcopy \"" + i + "\" \"" + d  + "\" /Y \n"
+		)
+				
+		writeFile f s
+		
+		-- IMPORTANT link must exist!
+		HiddenDOSCommand runCopyAsstes 		
+	)
+	
 	on btnInstallToolbar pressed do
 	(
 		i = ddlToolBarScripts.selection
@@ -1171,7 +1205,15 @@ rollout rInstalls "Installs"
 			txt = getIniSetting szInstallsToolbar[i]  "INFO" "TEXT"
 			ico = getIniSetting szInstallsToolbar[i]  "INFO" "ICON"
 			
+			icons = getIniSetting szInstallsToolbar[i]  "ICONS"
+			
 			if(launch == "" or cat == "" or macro =="" or txt == "") do return messageBox "Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!"
+			
+			if(icons.count > 0) do
+			(
+				destPath = (GetDir #ui) + @"icons\"
+				copyAssets icons destPath
+			)
 			
 			p = getDir (#downloads)
 								
@@ -1188,7 +1230,7 @@ rollout rInstalls "Installs"
 			
 			writeFile p s
 			
-			fileIn p
+			try(fileIn p) catch(messageBox "Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!")
 						
 			displayInfo launch tb:true cat: cat			
 			
