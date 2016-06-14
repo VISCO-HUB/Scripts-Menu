@@ -10,43 +10,46 @@ Icon:#("UVWUnwrapView",19)
 
 fn addToolBarButton macro cat txt =
 (
-	f = cui.getConfigFile() 
-	cui.loadConfig f
-	cui.saveConfigAs f
-	
-	l = "<Item typeID=\"2\" type=\"CTB_MACROBUTTON\" width=\"0\" height=\"0\" controlID=\"0\" macroTypeID=\"3\" macroType=\"MB_TYPE_ACTION\" actionTableID=\"647394\" imageID=\"-1\" imageName=\"\" actionID=\"" + macro + "`[" + cat + "]\" tip=\"" + txt + "\" label=\"" + txt + "\" />"
-	
-	file = MemStreamMgr.openFile f
-	size = file.size()
-	MemStreamMgr.close file
-
-	stream = openFile f mode:"r+"
-	
-	if((skipToString stream l) == undefined) do
+	try
 	(
-		seek stream 0 
+		f = cui.getConfigFile() 
+		cui.loadConfig f
+		cui.saveConfigAs f
 		
-		c = "</Items>"
+		l = "<Item typeID=\"2\" type=\"CTB_MACROBUTTON\" width=\"0\" height=\"0\" controlID=\"0\" macroTypeID=\"3\" macroType=\"MB_TYPE_ACTION\" actionTableID=\"647394\" imageID=\"-1\" imageName=\"\" actionID=\"" + macro + "`[" + cat + "]\" tip=\"" + txt + "\" label=\"" + txt + "\" />"
 		
-		skipToString stream c
+		file = MemStreamMgr.openFile f
+		size = file.size()
+		MemStreamMgr.close file
+
+		stream = openFile f mode:"r+"
+		
+		if((skipToString stream l) == undefined) do
+		(
+			seek stream 0 
 			
-		pos = filePos stream - c.count
+			c = "</Items>"
+			
+			skipToString stream c
+				
+			pos = filePos stream - c.count
+			
+			seek stream pos
+			
+			previousContent = readChars stream (size - pos)
+			
+			seek stream pos
+			
+			format ("\n\t\t" + l + "\n") to:stream
+			format previousContent to:stream
+		)
 		
-		seek stream pos
+		close stream
 		
-		previousContent = readChars stream (size - pos)
-		
-		seek stream pos
-		
-		format ("\n\t\t" + l + "\n") to:stream
-		format previousContent to:stream
-	)
-	
-	close stream
-	
-	cui.loadConfig f
-	cui.saveConfigAs f
-	cui.setConfigFile f
+		cui.loadConfig f
+		cui.saveConfigAs f
+		cui.setConfigFile f
+	) catch(messageBox "Error to install Scripts Launcher!\nPlease install manually!" title: "Error!")
 )
 
 addToolBarButton "runScriptsLauncher" "VISCOCG" "Scripts Launcher"
