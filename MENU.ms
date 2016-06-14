@@ -2,10 +2,18 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.3.3
+VERSION = 1.4.0
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = \help\scriptsLauncher.html
+
+[INSTALL]
+MACRO=Scripts_Launcher
+CAT=ViscoCG
+TEXT=SL
+ICON=#("UVWUnwrapView",19)
+
+[ICONS]
 
 [1.0.0]
 
@@ -70,6 +78,11 @@ HELP = \help\scriptsLauncher.html
 
 - BugFix: Notify updated scripts
 
+[1.4.0]
+
++ Added: Create button for every script=
+- Removed: Installs -> Install Script fetature=
+
 [ABOUT]
 
 - Run any ViscoCG script=
@@ -80,6 +93,11 @@ HELP = \help\scriptsLauncher.html
 - Notification =
 - Info about scripts =
 - More features coming soon... =
+
+[TEST]
+Text here=
+@=
+_=
 
 [SCRIPT]
 
@@ -108,7 +126,6 @@ try(cui.UnRegisterDialogBar rScriptsLoader) catch()
 try(closeRolloutFloater rScriptsLoader)catch()
 global szScriptsPath = #()
 global szInstallsPath = #()
-global szInstallsToolBar = #()
 global szCategoriesPath = #()
 global szTestPath = #()
 global szTempScriptspath = #()
@@ -133,6 +150,8 @@ fn getScriptIniInfo s releaseInfo: "" =
 		return r
 	)
 	
+	fn isVer i = (filterString i ".").count > 1
+	
 	v = getINISetting s "INFO" "VERSION"
 	a = getINISetting s "INFO" "AUTHOR"
 	n = getINISetting s "INFO" "NAME"
@@ -140,10 +159,11 @@ fn getScriptIniInfo s releaseInfo: "" =
 	c = getINISetting s "INFO" "DEV"
 	h = getINISetting s "INFO" "HELP"
 	t = getINISetting s "TEST"
+	b = getINISetting s "INSTALL"
+	 			
+	r = for i in (getINISetting s) where isVer i  collect i
 	
-	r = for i in (getINISetting s) where i != "ABOUT" and i != "SCRIPT" and i != "COPY" and i != "TEST" collect i
-	
-	return #(n, a, v, o, r, c, h, t)
+	return #(n, a, v, o, r, c, h, t, b)
 )
 
 fn writeFile f s =
@@ -574,6 +594,166 @@ rollout rLauncher "Scripts"
 		)
 	)
 	
+	-----
+	
+	fn copyAssets a d =
+	(		
+		
+		f = @"c:\temp\"
+		makeDir f
+		
+		f += "install.bat"
+		
+		if(doesFileExist f) do deleteFile f
+		
+		s = ""
+		
+		for i in a do
+		(
+			s += "xcopy \"" + i + "\" \"" + d  + "\" /Y \n"
+		)
+				
+		writeFile f s
+		
+		-- IMPORTANT link must exist!
+		HiddenDOSCommand runCopyAsstes 		
+	)
+
+	fn addToolBarButton macro cat txt =
+	(
+		f = cui.getConfigFile() 
+		cui.loadConfig f
+		cui.saveConfigAs f
+		
+		l = "<Item typeID=\"2\" type=\"CTB_MACROBUTTON\" width=\"0\" height=\"0\" controlID=\"0\" macroTypeID=\"3\" macroType=\"MB_TYPE_ACTION\" actionTableID=\"647394\" imageID=\"-1\" imageName=\"\" actionID=\"" + macro + "`[" + cat + "]\" tip=\"" + txt + "\" label=\"" + txt + "\" />"
+		
+		file = MemStreamMgr.openFile f
+		size = file.size()
+		MemStreamMgr.close file
+
+		stream = openFile f mode:"r+"
+		
+		if((skipToString stream l) == undefined) do
+		(
+			seek stream 0 
+			
+			c = "</Items>"
+			
+			skipToString stream c
+				
+			pos = filePos stream - c.count
+			
+			seek stream pos
+			
+			previousContent = readChars stream (size - pos)
+			
+			seek stream pos
+			
+			format ("\n\t\t" + l + "\n") to:stream
+			format previousContent to:stream
+		)
+		
+		close stream
+		
+		cui.loadConfig f
+		cui.saveConfigAs f
+		cui.setConfigFile f
+	)
+
+	fn addQuadMenuButton macro cat txt =
+	(
+		quadMenu = menuMan.getViewportRightClickMenu #nonePressed
+		theMenu = quadMenu.getMenu 1
+
+		fn findMenuItem theMenu menuName =
+		(
+			for i in 1 to theMenu.numItems() where (theMenu.getItem i).getTitle() == menuName do return i
+			return 0
+		)
+
+		fn unregisterMenuItem theMenu menuName =
+		(	
+			try
+			(
+				for i in 1 to theMenu.numItems() do
+				(
+					if((theMenu.getItem i).getTitle() == menuName) do
+					(
+						theMenu.removeItemByPosition i 	
+
+						if((theMenu.getItem (i - 1)).getIsSeparator()) do theMenu.removeItemByPosition (i - 1)
+					)
+				)
+			)catch()
+		)
+
+		item = try(findMenuItem theMenu "Select &Similar")catch(6)
+
+		unregisterMenuItem theMenu txt
+		
+		quadItem = menuMan.createActionItem macro ("[" + cat + "]")
+			
+		theMenu.addItem quadItem (item += 1)
+			
+		menuMan.updateMenuBar()
+	)
+	
+	fn installButton type: 1=
+	(
+		id = getSelectedId()
+			
+		if(id != 0) do
+		(			
+			launch = szTempScriptspath[id]			
+			macro = getIniSetting szTempScriptspath[id]  "INSTALL" "MACRO"
+			cat = getIniSetting szTempScriptspath[id]  "INSTALL" "CAT"			
+			txt = getIniSetting szTempScriptspath[id]  "INSTALL" "TEXT"
+			ico = getIniSetting szTempScriptspath[id]  "INSTALL" "ICON"			
+			icons = getIniSetting szTempScriptspath[id]  "ICONS"
+			
+			if(launch == "" or cat == "" or macro =="" or txt == "") do return messageBox "Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!"
+			
+			if(icons.count > 0) do
+			(
+				destPath = (GetDir #ui) + @"icons\"
+				copyAssets icons destPath
+			)
+			
+			p = getDir (#downloads) + @"\"
+								
+			p += "install_" + timeStamp() as string + ".mcr"
+			
+			s = "macroScript " + macro + "\n"
+			s += "category:\"[" + cat + "]\" \n"
+			s += "toolTip:\"" + txt + "\" \n"
+			s += "buttontext:\"" + txt + "\" \n"
+			if(ico != "") do s += "Icon:" + ico + "\n"
+			s += "(\n"
+			s += "try(fileIn(@\"" + launch + "\"))catch(messageBox \"Lost network connection!\" title: \"Warning!\")	\n"
+			s += ")\n"
+			
+			writeFile p s
+			
+			try(fileIn p) catch(messageBox "1111Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!")
+						
+			displayInfo launch tb:true cat: cat			
+			
+			
+			case type of
+			(
+				2: addQuadMenuButton macro cat txt												
+				default: addToolBarButton macro cat txt
+			)			
+		)
+	)
+	
+	fn installButtonType1 = installButton type: 1
+	
+	fn installButtonType2 = installButton type: 2
+
+	
+	---
+	
 	fn contextMenuItem m n enabled: true =
 	(
 		item = undefined	
@@ -617,7 +797,7 @@ rollout rLauncher "Scripts"
 		contextMenu.Items.Add("-")
 		dotNet.addEventHandler (contextMenu.Items.Add("Info about script")) "Click" showScriptInfo
 		dotNet.addEventHandler (contextMenu.Items.Add("Help for script")) "Click" showScriptHelp
-			
+					
 			
 		/* Enable/ Disable StripMenu items*/
 		
@@ -625,7 +805,6 @@ rollout rLauncher "Scripts"
 			
 		i = #()	
 		if(id > 0) do i = getScriptIniInfo szTempScriptspath[id]
-
 			
 		if(id == 0) do 
 		(
@@ -638,7 +817,15 @@ rollout rLauncher "Scripts"
 		if(id == 0 or (i[1] == "" and i[2] == "")) do contextMenuItem contextMenu "Info about script" enabled: false	
 		
 		if(id == 0 or i[7] == undefined or i[7] == "" or (doesFileExist ((getFilenamePath szTempScriptspath[id]) + i[7])) == false) do contextMenuItem contextMenu "Help for script" enabled: false
-					
+		
+		if(id > 0 and i[9].count > 0) do
+		(
+			contextMenu.Items.Add("-")
+			subMenu = contextMenu.Items.Add("Add button")
+			dotNet.addEventHandler (subMenu.DropDownItems.Add("Main Toolbar")) "Click" installButtonType1
+			dotNet.addEventHandler (subMenu.DropDownItems.Add("Quad Menu")) "Click" installButtonType2
+		)
+			
 		lbxScriptList.ContextMenuStrip = contextMenu	
 	)
 	
@@ -1048,28 +1235,17 @@ fn notifyScripts =
 
 rollout rInstalls "Installs"
 (
-	group "Install Plugin"
+	group "Install Plugin (*.mzp)"
 	(
 		dropdownlist ddlInstalls ""
 		button btnInstall "Install"
-	)
-	
-	group "Install Script"
-	(
-		dropdownlist ddlToolBarScripts ""
-		radiobuttons rdoInterfaceType "" labels: #("Main Toolbar", "Quad Menu")
-		button btnInstallToolbar "Install"			
 	)
 	
 	on rInstalls open do
 	(
 		szInstallsPath= getFiles(szInstallsDir + "\*" + szExt2)			
 		ddlInstalls.items = for z in szInstallsPath collect (getFilenameFile z)
-		
-		
-		szInstallsToolbar = getFiles(szInstallsDir + "\*" + szExt3)
-		ddlToolBarScripts.items = for z in szInstallsToolbar collect (getFilenameFile z)
-		
+				
 		rLauncher.lbxScriptList.Update()
 		rLauncher.lbxScriptList.Refresh()
 	)
@@ -1079,168 +1255,6 @@ rollout rInstalls "Installs"
 		i = ddlInstalls.selection
 		
 		if(i > 0  and szInstallsPath[i] != undefined and szInstallsPath[i] != "" and doesFileExist szInstallsPath[i]) do fileIn szInstallsPath[i] 
-	)
-	
-	fn writeFile f s =
-	(			
-		f = createFile f mode: "wt"
-
-		format(s as string) to:f
-
-		flush f
-		close f
-	)
-	
-	fn addToolBarButton macro cat txt =
-	(
-		f = cui.getConfigFile() 
-		cui.loadConfig f
-		cui.saveConfigAs f
-		
-		l = "<Item typeID=\"2\" type=\"CTB_MACROBUTTON\" width=\"0\" height=\"0\" controlID=\"0\" macroTypeID=\"3\" macroType=\"MB_TYPE_ACTION\" actionTableID=\"647394\" imageID=\"-1\" imageName=\"\" actionID=\"" + macro + "`[" + cat + "]\" tip=\"" + txt + "\" label=\"" + txt + "\" />"
-		
-		file = MemStreamMgr.openFile f
-		size = file.size()
-		MemStreamMgr.close file
-
-		stream = openFile f mode:"r+"
-		
-		if((skipToString stream l) == undefined) do
-		(
-			seek stream 0 
-			
-			c = "</Items>"
-			
-			skipToString stream c
-				
-			pos = filePos stream - c.count
-			
-			seek stream pos
-			
-			previousContent = readChars stream (size - pos)
-			
-			seek stream pos
-			
-			format ("\n\t\t" + l + "\n") to:stream
-			format previousContent to:stream
-		)
-		
-		close stream
-		
-		cui.loadConfig f
-		cui.saveConfigAs f
-		cui.setConfigFile f
-	)
-	
-	fn addQuadMenuButton macro cat txt =
-	(
-		quadMenu = menuMan.getViewportRightClickMenu #nonePressed
-		theMenu = quadMenu.getMenu 1
-
-		fn findMenuItem theMenu menuName =
-		(
-			for i in 1 to theMenu.numItems() where (theMenu.getItem i).getTitle() == menuName do return i
-			return 0
-		)
-
-		fn unregisterMenuItem theMenu menuName =
-		(	
-			try
-			(
-				for i in 1 to theMenu.numItems() do
-				(
-					if((theMenu.getItem i).getTitle() == menuName) do
-					(
-						theMenu.removeItemByPosition i 	
-
-						if((theMenu.getItem (i - 1)).getIsSeparator()) do theMenu.removeItemByPosition (i - 1)
-					)
-				)
-			)catch()
-		)
-
-		item = try(findMenuItem theMenu "Select &Similar")catch(6)
-
-		unregisterMenuItem theMenu txt
-		
-		quadItem = menuMan.createActionItem macro ("[" + cat + "]")
-			
-		theMenu.addItem quadItem (item += 1)
-			
-		menuMan.updateMenuBar()
-	)
-	
-	fn copyAssets a d =
-	(		
-		
-		f = @"c:\temp\"
-		makeDir f
-		
-		f += "install.bat"
-		
-		if(doesFileExist f) do deleteFile f
-		
-		s = ""
-		
-		for i in a do
-		(
-			s += "xcopy \"" + i + "\" \"" + d  + "\" /Y \n"
-		)
-				
-		writeFile f s
-		
-		-- IMPORTANT link must exist!
-		HiddenDOSCommand runCopyAsstes 		
-	)
-	
-	on btnInstallToolbar pressed do
-	(
-		i = ddlToolBarScripts.selection
-		
-		if(szInstallsToolbar[i] != undefined and szInstallsToolbar[i] != "" and doesFileExist szInstallsToolbar[i]) do
-		(			
-			launch = getIniSetting szInstallsToolbar[i]  "INFO" "LAUNCH"
-			cat = getIniSetting szInstallsToolbar[i]  "INFO" "CAT"
-			macro = getIniSetting szInstallsToolbar[i]  "INFO" "MACRO"
-			txt = getIniSetting szInstallsToolbar[i]  "INFO" "TEXT"
-			ico = getIniSetting szInstallsToolbar[i]  "INFO" "ICON"
-			
-			icons = getIniSetting szInstallsToolbar[i]  "ICONS"
-			
-			if(launch == "" or cat == "" or macro =="" or txt == "") do return messageBox "Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!"
-			
-			if(icons.count > 0) do
-			(
-				destPath = (GetDir #ui) + @"icons\"
-				copyAssets icons destPath
-			)
-			
-			p = getDir (#downloads)
-								
-			p += "install_" + timeStamp() as string + ".mcr"
-			
-			s = "macroScript " + macro + "\n"
-			s += "category:\"[" + cat + "]\" \n"
-			s += "toolTip:\"" + txt + "\" \n"
-			s += "buttontext:\"" + txt + "\" \n"
-			if(ico != "") do s += "Icon:" + ico + "\n"
-			s += "(\n"
-			s += "try(fileIn(@\"" + launch + "\"))catch(messageBox \"Lost network connection!\" title: \"Warning!\")	\n"
-			s += ")\n"
-			
-			writeFile p s
-			
-			try(fileIn p) catch(messageBox "Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!")
-						
-			displayInfo launch tb:true cat: cat			
-			
-			
-			case rdoInterfaceType.state of
-			(
-				2: addQuadMenuButton macro cat txt												
-				default: addToolBarButton macro cat txt
-			)			
-		)
 	)
 )
 
