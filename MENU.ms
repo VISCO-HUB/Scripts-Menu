@@ -93,7 +93,7 @@ global szTestDir = szScriptsDir + @"test\"
 global szIconFilter24i = szScriptsDir + @"\img\filter_24i.bmp"
 global szIconFilter24a = szScriptsDir + @"\img\filter_24a.bmp"
 	
-global iniSettingsFile = szScriptsDir + (sysInfo.username) + "_" + szScriptsName + ".ini"
+global iniSettingsFile = szScriptsDir + @"ini\\" + (sysInfo.username) + "_" + szScriptsName + ".ini"
 global filterPrefix = "_"
 global szCurrentCategory = "All"
 	
