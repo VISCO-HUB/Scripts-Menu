@@ -80,8 +80,8 @@ ICON=#("UVWUnwrapView",19)
 
 [1.4.0]
 
-+ Added: Create button for every script=
-- Removed: Installs -> Install Script fetature=
++ Added: Create button for every script by Right Click Menu=
+- Removed: Installs -> Install Script featature=
 
 [ABOUT]
 
@@ -596,7 +596,7 @@ rollout rLauncher "Scripts"
 	
 	-----
 	
-	fn copyAssets a d =
+	fn copyAssets a d altPath: ""=
 	(		
 		
 		f = @"c:\temp\"
@@ -611,6 +611,7 @@ rollout rLauncher "Scripts"
 		for i in a do
 		(
 			s += "xcopy \"" + i + "\" \"" + d  + "\" /Y \n"
+			if(altPath != "") do s += "xcopy \"" + i + "\" \"" + altPath  + "\" /Y \n"
 		)
 				
 		writeFile f s
@@ -716,7 +717,8 @@ rollout rLauncher "Scripts"
 			if(icons.count > 0) do
 			(
 				destPath = (GetDir #ui) + @"icons\"
-				copyAssets icons destPath
+				altPath = (GetDir #userIcons) 
+				copyAssets icons destPath altPath: altPath				
 			)
 			
 			p = getDir (#downloads) + @"\"
@@ -743,8 +745,13 @@ rollout rLauncher "Scripts"
 			(
 				2: addQuadMenuButton macro cat txt												
 				default: addToolBarButton macro cat txt
-			)			
+			)	
+
+			colorman.reInitIcons()			
 		)
+		
+		rLauncher.lbxScriptList.Update()
+		rLauncher.lbxScriptList.Refresh()
 	)
 	
 	fn installButtonType1 = installButton type: 1
