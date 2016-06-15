@@ -109,8 +109,8 @@ global szScriptsName = filenameFromPath (getThisScriptFilename())
 global szInstallsDir = szScriptsDir + @"installs\"
 global runCopyAsstes = szInstallsDir + "copy_assets.lnk"
 global szTestDir = szScriptsDir + @"test\"
-global szIconFilter24i = szScriptsDir + @"\img\filter_24i.bmp"
-global szIconFilter24a = szScriptsDir + @"\img\filter_24a.bmp"
+global szIconFilter24i = szScriptsDir + @"\icons\MENU\filter_24i.bmp"
+global szIconFilter24a = szScriptsDir + @"\icons\MENU\filter_24a.bmp"
 	
 global iniSettingsFile = szScriptsDir + @"ini\" + (sysInfo.username) + "_" + szScriptsName + ".ini"
 global filterPrefix = "_"
