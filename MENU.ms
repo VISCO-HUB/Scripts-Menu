@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.4.0
+VERSION = 1.4.1
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = \help\scriptsLauncher.html
@@ -83,6 +83,10 @@ ICON=#("UVWUnwrapView",19)
 + Added: Create button for every script by Right Click Menu=
 - Removed: Installs -> Install Script featature=
 
+[1.4.1]
+
+* Changed: Filter by category. Now you can select few categories.
+
 [ABOUT]
 
 - Run any ViscoCG script=
@@ -114,6 +118,7 @@ global szIconFilter24a = szScriptsDir + @"\icons\MENU\filter_24a.bmp"
 	
 global iniSettingsFile = szScriptsDir + @"ini\" + (sysInfo.username) + "_" + szScriptsName + ".ini"
 global filterPrefix = "_"
+global szMainCategory = "By category"
 global szCurrentCategory = "All"
 	
 global szExt = ".ms"
@@ -138,7 +143,7 @@ global rInstalls
 global rTest
 global rSettings
 global rAbout
-global rScriptsLoader = newRolloutFloater "Menu" 235 575
+global rScriptsLoader = newRolloutFloater "Menu" 235 580
 
 ----------------------------------------------------------------------------------------------------
 
@@ -500,19 +505,22 @@ rollout rLauncher "Scripts"
 		
 		return f
 	)	
-	
-	
-	fn buildScriptList c =
-	(											
-		szScriptsPath = #()
-		for i in szCategoriesPath where c == getCategory i or c == "All" do
-		(
-			join szScriptsPath (getFiles(i + "*" + szExt))
-		)
 		
-		join szScriptsPath (getFiles(szScriptsDir + "*" + szExt))
+	fn buildScriptList c =
+	(		
+		szScriptsPath = #()
 				
-		szScriptsPath = for i in szScriptsPath where getFilenameFile i != "menu.ms" collect i
+		Categories = Settings "CATEGORIES" "" "" "a"
+		for i in Categories do
+		(
+			z = Settings "CATEGORIES" i "bool" "r"	
+			
+			if(z == true or c == "All" or c == i) do
+			(
+				p = szScriptsDir + filterPrefix + i + @"\"				
+				join szScriptsPath (getFiles(p + "*" + szExt))	
+			)
+		)
 		
 		szTempScriptspath = szScriptsPath
 		
@@ -537,8 +545,7 @@ rollout rLauncher "Scripts"
 			Settings "CUSTOM" szTempScriptspath[id] "false" "d"
 			Settings "FAVORITE" szTempScriptspath[id] "false" "d"
 		)
-		
-		
+				
 		buildCustomList()
 	)
 	
@@ -736,7 +743,7 @@ rollout rLauncher "Scripts"
 			
 			writeFile p s
 			
-			try(fileIn p) catch(messageBox "1111Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!")
+			try(fileIn p) catch(messageBox "1Bad macroscript installaiton file!\nPlease notify developer team about this problem." title: "Error!")
 						
 			displayInfo launch tb:true cat: cat			
 			
@@ -918,10 +925,29 @@ rollout rLauncher "Scripts"
 		edtFindScript.text = ""
 	)
 	
+	fn changeSubCategory c =
+	(
+		z = Settings "CATEGORIES" c "bool" "r"		
+
+		Settings "CATEGORIES" c (not z) "w"
+		
+		rLauncher.buildScriptList c
+		rLauncher.showCategoriesMenu()
+	)
+	
 	global rcCatChecked = undefined
 	
 
-	fn rcCheckItem c = (szCurrentCategory == c) as string	
+	fn rcCheckItem c =
+	(
+		z = Settings "CATEGORIES" c "bool" "r"		
+		return z as string
+	)
+	
+	fn rcCheckCat c =
+	(
+		(szCurrentCategory == c) as string	
+	)
 	
 	fn showCategoriesMenu =
 	(			
@@ -929,26 +955,31 @@ rollout rLauncher "Scripts"
 		rcPoupPos.y += 24
 		
 		ex = "rcmenu rcCategories \n(\n"		
-		ex += "menuItem rcAll \"All\" checked:" + rcCheckItem "All" + " \n"
+		ex += "menuItem rcAll \"All\" checked:" + rcCheckCat "All" + " \n"
 		ex += "on rcAll picked do rLauncher.changeCategory \"All\"\n"
-		ex += "menuItem rcFavorite \"Favorite\" checked:" + rcCheckItem "Favorite" + " \n"
-		ex += "on rcFavorite picked do rLauncher.changeCategory \"Favorite\"\n"
 		ex += "separator sep1\n"	
+		ex += "menuItem rcByCat \"" + szMainCategory + ":\" checked:" + rcCheckCat szMainCategory + " \n"
+		ex += "on rcByCat picked do rLauncher.changeCategory \"" + szMainCategory + "\"\n"
+		ex += "separator sep0\n"
 		
 		for i in 1 to szCategoriesPath.count do
 		(	
 			n = "rcCat" + i as string 			
 			c = getCategory szCategoriesPath[i]
 					
-			ex += "menuItem " + n +  " \"" + c+ "\" checked: " + rcCheckItem c + "\n" 
-			ex += "on " + n + " picked do (\n rLauncher.changeCategory \"" + c + "\"  \n) \n"	
+			ex += "menuItem " + n +  " \"     - " + c + "\" checked: " + rcCheckItem c + " enabled:" + rcCheckCat szMainCategory + "\n" 
+			ex += "on " + n + " picked do (\n rLauncher.changeSubCategory \"" + c + "\"  \n) \n"	
 		)
+		
 		ex += "separator sep2\n"
-		ex += "menuItem rcCustom \"Custom\" checked:" + rcCheckItem "Custom" + " \n"
+		ex += "menuItem rcFavorite \"Favorite\" checked:" + rcCheckCat "Favorite" + " \n"
+		ex += "on rcFavorite picked do rLauncher.changeCategory \"Favorite\"\n"
+		ex += "separator sep3\n"
+		ex += "menuItem rcCustom \"Custom\" checked:" + rcCheckCat "Custom" + " \n"
 		ex += "on rcCustom picked do rLauncher.changeCategory \"Custom\"\n"		
 		ex += "\n )\n popUpMenu rcCategories rollout: rLauncher pos:" + rcPoupPos as string + "\n"
 		
-		execute ex	
+		execute ex			
 	)
 
 ----------------------------------------------------------------------------------------------------	
@@ -974,7 +1005,19 @@ rollout rLauncher "Scripts"
 		try(rScriptsLoader.pos = [x, y]) catch()
 		
 		szCategoriesPath = getDirectories (szScriptsDir + filterPrefix + "*")
-						
+		
+		for i in szCategoriesPath do 
+		(
+			c = getCategory i
+			z = Settings "CATEGORIES" c "string" "r"
+			
+			if(z == undefined or z == "") do
+			(
+				Settings "CATEGORIES" c "false" "w"
+				if(c == "Global") do Settings "CATEGORIES" c "true" "w"
+			)			
+		)
+		
 		changeCategory szCurrentCategory	
 	)
 	on rLauncher close do
