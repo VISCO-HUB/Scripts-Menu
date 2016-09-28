@@ -5,7 +5,7 @@ NAME = Scripts Launcher
 VERSION = 1.4.1
 AUTHOR = MastaMan
 DEV = ViscoCG
-HELP = \help\scriptsLauncher.html
+HELP = https://visco-hub.github.io/Scripts-Menu/
 
 [INSTALL]
 MACRO=Scripts_Launcher
@@ -85,7 +85,8 @@ ICON=#("UVWUnwrapView",19)
 
 [1.4.1]
 
-* Changed: Filter by category. Now you can select few categories.
+* Changed: Filter by category. Now you can select few categories=
+* Improved Help=
 
 [ABOUT]
 
@@ -106,7 +107,6 @@ _=
 [SCRIPT]
 
 */
-
 
 global szScriptsDir = getFilenamePath (getThisScriptFilename()) + @"scripts\"
 global szScriptsName = filenameFromPath (getThisScriptFilename())
@@ -264,6 +264,12 @@ fn displayInfo szScriptPath tb: false cat:"" =
 			
 			p = getFilenamePath(getThisScriptFilename()) + i[7]
 			isHelp = i[7] != "" and doesFileExist p
+							
+			if(findString i[7] "https://" != undefined) do 
+			(
+				isHelp = true
+				p = i[7]
+			)
 			
 			if(toolbar) do 
 			(
@@ -515,7 +521,7 @@ rollout rLauncher "Scripts"
 		(
 			z = Settings "CATEGORIES" i "bool" "r"	
 			
-			if(z == true or c == "All" or c == i) do
+			if(z == true or c == "All") do
 			(
 				p = szScriptsDir + filterPrefix + i + @"\"				
 				join szScriptsPath (getFiles(p + "*" + szExt))	
@@ -1376,7 +1382,7 @@ rollout rSettings "Settings"
 		checkbox cbxScriptsAdded "New Scripts Added" checked: true
 	)
 	
-	button btnOpenScripts "Open Scripts Folder" enabled: false
+	--button btnOpenScripts "Open Scripts Folder" enabled: false
 	timer tmrNotify active: true interval: 500
 
 	on btnOpenScripts pressed do
@@ -1454,7 +1460,12 @@ rollout rAbout "About"
 		i = getScriptIniInfo s
 		szHelp = (getFilenamePath s) + i[7]
 		if(i[7] != "" and doesFileExist szHelp) do btnHelp.enabled = true
-			
+		if(findString i[7] "https://" != undefined) do 
+		(
+			btnHelp.enabled = true
+			szHelp = i[7]
+		)
+		
 		if(run) do ShellLaunch szHelp ""
 	)
 	
