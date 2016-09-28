@@ -1,0 +1,774 @@
+<!doctype html>
+<!--
+
+Universal Help 
+Author: MastaMan
+
+Tags:
+h1, ul, li, blockquote, pre
+
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+	/*------------------------------------*/
+	
+	var scriptName = 'Scripts Launcher'
+	var scriptVer = '1.4.1'
+	var purchaseKeyUrl = ''
+	var downloadUrl = 'https://github.com/VISCO-HUB/Scripts-Menu/archive/master.zip'
+	
+	var helpVer = '1.0.0' 
+	var author = 'Vasiliy Lukyanenko'
+	var defaultLang = 'en' 
+		
+	/*------------------------------------*/
+	
+	
+	var scriptFullname = scriptName + "  v." + scriptVer
+	var year = new Date().getFullYear()
+	var currentLang = defaultLang
+	
+	function echo(v)
+	{
+		document.write(v)
+	}
+		
+	
+	function toggleMenu() 
+	{
+		 var x = document.getElementById('menu-icon')
+		 x.classList.toggle("menu-toggle")
+		 x.classList.toggle("anim")
+		 
+		 var m = document.getElementById('menu')
+		 m.classList.toggle('menu-toggle')
+		 
+		 var b = document.getElementById('content')
+		 b.classList.toggle('content-toggle')
+		 
+		 var t = document.getElementById('body')
+		 t.classList.toggle('body-toggle')		 
+	}
+	
+		
+	function setActive()
+	{
+		var a = document.getElementsByClassName("nav-active")
+		for(var i = 0; i < a.length; i++)  
+		{
+			a[i].className = "nav"	
+		}
+		
+		var a = document.querySelectorAll("#menu a")
+
+		for(var i = 0; i < a.length; i++)  
+		{
+			h = a[i].getAttribute("href")
+			x = window.location.hash
+
+			if(h == x)
+			{		
+				a[i].className = "nav-active"
+			}		
+		}				
+	}
+	
+	function startBind()
+	{		
+		var a = document.querySelectorAll("a")
+
+		for(var i = 0; i < a.length; i++)  
+		{
+			a[i].onmouseout = function () {setActive()}
+		}
+	}
+	
+	
+	function parseLang(a)
+	{
+		o = a.split('_')
+		orig = o[0].replace('#', '')
+		u = orig + '_'	
+
+		return u
+	}
+	
+	
+	function setLangUrl(a)
+	{
+		h = a.getAttribute("href")				
+
+		h1 = parseLang(h) + currentLang
+		h2 = parseLang(h) + defaultLang
+		
+		e = document.getElementById(h1)	
+		
+		a.href = e ? ('#' + h1) : ('#' + h2)
+	}
+	
+	function init()
+	{	
+		var a = document.getElementsByClassName('item')
+		
+		for(var i = 0; i < a.length; i++)  
+		{
+			itemLang = a[i].getAttribute("lang")
+			if(!itemLang) {itemLang = defaultLang}
+			
+			u = parseLang(a[i].id) + itemLang
+			a[i].id = u
+			
+			if((a[i].children[0]).className != 'title')
+			{			
+				title = a[i].getAttribute("title")
+				elTitle = document.createElement("header")				
+				elTitle.innerHTML = title
+				elTitle.className = "title"
+				elPadding = document.createElement("dummy")				
+				a[i].insertBefore(elPadding, a[i].firstChild)						
+				a[i].insertBefore(elTitle, a[i].firstChild)	
+			}
+		}
+		
+		var a = document.querySelectorAll("#menu a")
+
+		for(var i = 0; i < a.length; i++)  
+		{			
+			setLangUrl(a[i], currentLang)					
+		}
+		
+		var a = document.getElementsByClassName('purchase')
+		
+		for(var i = 0; i < a.length; i++)  
+		{			
+			a[i].href = purchaseKeyUrl
+		}
+		
+		var a = document.getElementsByClassName('download')
+		
+		for(var i = 0; i < a.length; i++)  
+		{			
+			a[i].href = downloadUrl
+		}
+	}
+	
+	function setActiveCurrentLang() {
+		var a = document.getElementById('lang').childNodes	
+		
+		for(var i = 0; i < a.length; i++)  
+		{			
+			a[i].className = ''
+			if(a[i].getAttribute('lang') == currentLang) a[i].className = 'active'
+		}
+	}
+	
+	function setLang(lang, el)
+	{		
+		currentLang = lang
+		
+		setActiveCurrentLang()
+					
+		init()
+			
+		u1 = parseLang(window.location.hash) + currentLang
+		u2 = parseLang(window.location.hash) + defaultLang
+		
+		var e = document.getElementById(u1)
+
+		location.replace(e ? '#' + u1 : '#' + u2);
+	}
+	
+	function getLangByUrl() {
+		var a = window.location.hash
+		var o = a.split('_')
+		if(o[1]) {
+			currentLang = o[1].toLowerCase()
+		} 
+	}
+		
+	document.addEventListener("DOMContentLoaded", function(){
+			//setTimeout("toggleMenu()", 50)
+		setTimeout("init()", 250)
+		setTimeout("getLangByUrl()", 200)
+		setTimeout("setActiveCurrentLang()", 240)			
+		setTimeout("startBind()", 280)
+		setTimeout(function(){
+		var el = document.getElementById(window.location.hash.replace('#', ''))
+		if(!el) {
+			location.replace("#home" + '_' + defaultLang)
+		}
+		else
+		{
+			location.replace(window.location.hash)
+		}
+		
+	}, 300)
+	});
+
+</script>
+<style>
+.item {
+	padding: 0px;
+	display: none; /* HIDE ALL CONTENT *//*display: block;*/
+}
+body {
+	color: #24292D;
+	font-family: Segoe, "Segoe UI", "DejaVu Sans", "Trebuchet MS", Verdana, sans-serif;
+	font-size: 1.0em;
+	line-height: 1.5em;
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	overflow-x: hidden;
+}
+img {
+	border: 0.5em solid #FFF;
+	margin: 0.5em 0;
+	box-shadow: rgba(0,0,0,0.2) 0 0 3px;
+	word-break: break-all;
+	word-spacing: normal;
+	word-wrap: break-word;
+	max-width: 95%;
+	height: auto !important;
+}
+html {
+	background: #EEEEEE;
+	height: 100%;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	background-position: center;
+	background-attachment: fixed;
+}
+h1, h2, h3 {
+	color: #3598DC;
+	margin: 0;
+	padding: 0.7em 0 0.7em 0;
+	font-size: 1.8em;
+	font-weight: normal;
+}
+header {
+	background: #24292D;
+	position: fixed;
+	width: 100%;
+	height: 1em;
+	top: 0;
+	left: 0;
+	padding: 0.7em 0 0.7em 2.3em;
+	font-size: 2em;
+	color: #9C9C9C;
+}
+dummy {
+	display: block;
+	content: '';
+	height: 6em;
+}
+a:link, a:visited {
+	color: #3598DC;
+	text-decoration: underline;
+}
+a:hover {
+	text-decoration: none;
+}
+a:active {
+	text-decoration: underline;
+}
+.menu-icon {
+	padding: 1.2em;
+	text-align: right;
+	position: fixed;
+	top: 0;
+	left: 13em;
+	margin-left: 0;
+	z-index: 1000;
+	transition: 0.2s all linear;
+	transition-delay: 0.1s;
+	cursor: pointer;
+	height: 100%;
+	width: 100%;
+}
+.menu-icon:hover div {
+	background-color: #3598DC !important;
+}
+.menu-toggle {
+	transform: translateX(-13em) !important;
+}
+.menu-toggle div {
+	background-color: #9C9C9C !important;
+}
+.anim .bar1 {
+	transform: translate(-0px, 0.65em) rotate(-45deg);
+}
+.anim .bar2 {
+	opacity: 0;
+}
+.anim .bar3 {
+	transform: translate(-0px, -0.65em) rotate(45deg);
+}
+.menu-icon div {
+	width: 2em;
+	height: 0.31em;
+	background-color: #3598DC;
+	color: #3598DC;
+	margin: 0.33em 0;
+	transition: 0.2s all linear;
+}
+.menu-toggle a, .menu-toggle #lang {
+	opacity: 0;
+	transition: 0.2s opacity linear;
+}
+.menu-icon.menu-toggle {
+	width: 100% !important;
+	height: 2.4em;
+}
+#menu {
+	transition: 0.2s all linear;
+	transition-delay: 0.1s;
+	left: 0px;
+	top: 0px;
+	position: fixed;
+	min-width: 11.5em;
+	width: 11.5em;
+	height: 100%;
+	padding: 0 1em;
+	border-right: 1px solid #6A6A6A;
+	background: #24292D;
+	color: #999EA4;
+	font-size: 1.5em;
+	padding-bottom: 2em;
+	padding-top: 2.2em;
+	box-sizing: border-box;
+	overflow: hidden;
+	overflow-y: auto;
+	text-shadow: #000 0 0.1em 0;
+	box-shadow: rgba(255,255,255,0.3) 0.02em 0 0px;
+	z-index: 500;
+}
+#menu li {
+	padding: 0;
+	line-height: 2em;
+}
+a.nav, a.nav-active {
+	margin: 0;
+	padding: 0;
+	text-decoration: none;
+	color: #9C9C9C;
+}
+a.nav:hover, a.nav-active {
+	padding: 0;
+	color: #3598DC;
+}
+a.nav:hover {
+	background: none;
+}
+div:target {
+	display: block;
+}
+#menu ul {
+	margin: 0px 0px 0px -0.2em;
+	padding: 0px;
+	list-style: none;
+}
+#menu li {
+	width: 100%;
+}
+#menu li:before {
+	content: "";
+	padding-right: 0;
+}
+#content {
+	padding: 0 1em 1em 1em;
+	margin-bottom: 3em;
+	transition: 0.2s opacity linear;
+	opacity: 0.1;
+}
+.content-toggle {
+	opacity: 1.0 !important;
+	transition: 0.2s opacity linear !important;
+	transition-delay: 0.3s !important;
+}
+.body-toggle {
+	overflow: hidden;
+}
+blockquote {
+	border-left: 0.2em #3598DC solid;
+	padding-left: 1em;
+	padding-bottom: 0.5em;
+	margin: 0.5em 0;
+}
+blockquote.red {
+	border-color: #F08A81;
+}
+blockquote.red h1 {
+	color: #F08A81;
+}
+blockquote.red strong {
+	color: #CC4A3E;
+}
+body li {
+	list-style-type: none;
+}
+body li:before {
+	color: #3598DC;
+	content: "▪";
+	padding-right: 0.1em;
+}
+body ul {
+	padding: 0;
+}
+strong {
+	color: #317DAF;
+	font-weight: 500;
+}
+pre, .block {
+	background: #FFF;
+	box-shadow: rgba(0,0,0,0.2) 0 0 3px;
+	padding: 0.5em;
+	font-family: Consolas, "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
+	white-space: pre-wrap;
+}
+a.button, a.button:visited {
+	padding: 0.5em 0.8em;
+	background-color: #317DAF;
+	border: 0.35em solid #317DAF;
+	line-height: 5em;
+	text-decoration: none;
+	text-transform: uppercase;
+	color: #FFF;
+	font-weight: 600;
+	margin: 0.5em 0;
+}
+a.button:hover {
+	color: #317DAF;
+	background-color: transparent;
+}
+footer {
+	width: 100%;
+	text-align: center;
+	font-size: 0.7em;
+	height: 3em;
+	color: rgba(0,0,0,.4);
+	line-height: 1.3em;
+	padding: 0;
+	margin: 0;
+	padding-bottom: 0.1em;
+	text-shadow: #FFF 0 0.08em 0;
+}
+#lang {
+	left: -1em;
+	bottom: 0;
+	padding: 0.5em;
+	color: #FFF;
+	font-weight: 400;
+	position: absolute;
+	width: 100%;
+	text-align: center;
+	background-color: #24292D !important;
+}
+#lang span {
+	color: #FFF;
+	margin: 0 0.6em;
+	text-decoration: none;
+	cursor: pointer;
+	opacity: 0.5;
+	background-color: transparent !important;
+}
+#lang .active {
+	opacity: 1;
+	color: #3598DC;
+}
+.status-red, .statud-green, .status-grey {
+	padding: 0.1em;
+	font-weight: bold;
+	width: 6em;
+	display: inline-block;
+	text-align: center;
+}
+.status-red {
+	background: #E06666;
+	color: #B20000;
+}
+.statud-green {
+	background: #93C47D;
+	color: #38764F;
+}
+.status-grey {
+	background: #B7B7B7;
+	color: #434343;
+}
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Help</title>
+</head>
+<body id="body">
+<div id="menu-icon" class="menu-icon menu-toggle" onClick="toggleMenu()">
+	<div class="bar1"></div>
+	<div class="bar2"></div>
+	<div class="bar3"></div>
+</div>
+<div id="menu" class="menu-toggle" onClick="toggleMenu()">
+	<ul>
+		<li> <a href="#home" class="nav-active" >
+			<script>echo(scriptName)</script>
+			</a> </li>
+		<li> <a href="#install" class="nav" >Install</a> </li>
+		<li> <a href="#howtouse" class="nav" >How to Use</a> </li>
+		<li> <a href="#search" class="nav" >Search</a> </li>
+		<li> <a href="#categories" class="nav" >Categories</a> </li>
+		<li> <a href="#favorites" class="nav" >Favorites</a> </li>
+		<li> <a href="#custom" class="nav" >Custom Scripts</a> </li>
+		<li> <a href="#installs" class="nav" >Installs</a> </li>
+		<li> <a href="#updates" class="nav" >Updates</a> </li>
+		<li> <a href="#scriptsinfo" class="nav" >Scripts Info</a> </li>
+		<li> <a href="#settings" class="nav" >Settings</a> </li>
+		<li> <a href="#about" class="nav" >About</a> </li>
+	</ul>
+	<!--<div id="lang"><span onClick="setLang('ru', this)" lang="ru"> RU </span><span href="" onClick="setLang('en', this)" lang="en"> EN </span></div>-->
+</div>
+<div id="content" class="content-toggle">
+	<!-------------------------------------------------------------------------------------------------->
+	<!-- HOME -->
+	<!-- EN -->
+	<div class="item" id="home" lang="en" title="Scripts Launcher"> With
+		<script>echo(scriptName)</script>
+		you can run, search, sort by category, add to favorites and update scripts. <br>
+		You no longer need to create a button in the interface, or search for files of scripts, all is now in one place.<br>
+		Scripts Launcher get list of scripts from:<br>
+		<pre>\\visco.local\data\Instal_Sync\scripts\</pre>
+		<img src="img/scripts_launcer.png" alt=""/>
+		<h1>Features:</h1>
+		<ul>
+			<li> Scripts list </li>
+			<li> Quick search </li>
+			<li> Filter by category </li>
+			<li> Favorites</li>
+			<li> Updates </li>
+			<li> Dock window</li>
+			<li> Quick info and help about each script </li>
+			<li> Quick install *.mzp and *.mcr plugins </li>
+			<li> Notification when script updated or added </li>
+			<li> Remember window position </li>
+			<li> Test scripts feature </li>
+			<li> Settings saving </li>
+			<li> And other</li>
+		</ul>
+	</div>
+	<!-------------------------------------------------------------------------------------------------->
+	<!-- INSTALL -->
+	<!-- EN -->
+	<div class="item" id="install" lang="en" title="Install"> In the version of <strong>
+		<script>echo(scriptFullname)</script>
+		</strong> used Universal Installer,
+		which allows you to automatically copy necessary files,<br>
+		and add the button to the Tool Bar.
+		<h1>Step 1</h1>
+		Go to:
+		<pre>\\visco.local\data\Instal_Sync\scripts\</pre>
+		<h1>Step 2</h1>
+		Run the installer, just Drag&Drop <strong>INSTALL.mcr</strong> in to 3D Studio Max window.<br>
+		Or execute from <strong>Scripting &rarr; Run Script</strong>.<br>
+		<img src="img/install1.png" alt=""/>
+		<h1>Step 3</h1>
+		After run the installer you can see the next window.<br>
+		<img src="img/install2.png" alt=""/> <br>
+		In the 3Ds Max ToolBar will automatically created button:<br>
+		<img src="img/install3.png" alt=""/><br>
+		If this button not created jus run the 3Ds Max by Administrator. And try again <strong>Step 1</strong>.
+		<h1>Step 4</h1>
+		Press the <strong>Ok</strong> button for close the window. </div>
+	<!-------------------------------------------------------------------------------------------------->
+	<!-- HOW TO USE -->
+	<!-- EN -->
+	<div class="item" id="howtouse" lang="en" title="How to use"> Run the script from ToolBar.<br>
+		<img src="img/install3.png" alt=""/><br>
+		Select script from list.<br>
+		Press Enter, or press Run Script for launch the script.<br>
+		<img src="img/how_to_use.gif" alt=""/> </div>
+	<!-------------------------------------------------------------------------------------------------->
+	<!-- SEARCH -->
+	<!-- EN -->
+	<div class="item" id="search" lang="en" title="Search"> Search bar halps to find a script by any part of its name.<br>
+		<img src="img/search.gif" alt=""/><br>
+		To clear search bar press Esc or button <strong>Clear</strong>.<br>
+		<img src="img/clear.png" alt=""/> </div>
+	<!-- CATEGORIES -->
+	<!-- EN -->
+	<div class="item" id="categories" lang="en" title="Categories"> Some Scripts were created for certain needs and teams, that is why they were placed to special cathegories.<br>
+		There are also has three service categories: All, Favorite and Custom. <br>
+		<img src="img/categories.gif" alt=""/><br>
+		<strong>All</strong> - displays all the scripts.<br>
+		<strong>Favorite</strong> - displays only scripts which marked as favorite.<br>
+		<strong>Custom </strong>- displays scripts added from your pc (Scripts won't be available for other user). </div>
+	<!-- FAVORITES -->
+	<!-- EN -->
+	<div class="item" id="favorites" lang="en" title="Favorites"> Some Scripts were created for certain needs and teams, that is why they were placed to special cathegories.<br>
+		List of favourites allows user to store frequently used script in one place.<br>
+		It helps not to get lost in a large amount of scripts.<br>
+		<h1>Adding to Favorites:</h1>
+		<ul>
+			<li> Select script in the list</li>
+			<li> Press right mouse button &rarr; <strong>Add to Favorites</strong></li>
+			<li> Open tab Favorite</li>
+		</ul>
+		<h1>Removing from Favorites:</h1>
+		<ul>
+			<li> Select Favorites category</li>
+			<li> Select script in list</li>
+			<li >Press right mouse button &rarr; <strong>Remove from Favorite</strong></li>
+		</ul>
+		<img src="img/favorites.gif" alt=""/> </div>
+	<!-- CUSTOM -->
+	<!-- EN -->
+	<div class="item" id="custom" lang="en" title="Custom scripts"> If you want to add local scripts from your computer you can do it here.<br>
+		<h1>Adding to Custom:</h1>
+		<ul>
+			<li> Select <strong>Custom</strong> category </li>
+			<li> Press right mouse button &rarr; <strong>Add to Custom</strong> </li>
+			<li> Select script</li>
+		</ul>
+		<h1>How to delete from Custom:</h1>
+		<ul>
+			<li> Select Select Custom category category</li>
+			<li> Press right mouse button &rarr; <strong>Remove from Custom</strong></li>
+		</ul>
+		<img src="img/custom.gif" alt=""/> </div>
+	<!-- INSTALLS -->
+	<!-- EN -->
+	<div class="item" id="installs" lang="en" title="Installs"> In this section we placed the scripts which can't be run from the list, the ones that better to launch as a toolbar button or from right-mouse-button menu.<br>
+		<br>
+		To instal just select the script from dropdown menu and press Install. <br>
+		After installation you should see information about success process and how to add button on toolbar. <img src="img/installs.gif" alt=""/> </div>
+	<!-- UPDATES -->
+	<!-- EN -->
+	<div class="item" id="updates" lang="en" title="Updates">
+		<h1>Automatically update:</h1>
+		You will get latest versions of the scripts each time you open the Scripts Launcher.<br>
+		<br>
+		But if you want to get updates during the work session just open <strong>Update</strong> rollout and press <strong>Update Scripts</strong> button. <br>
+		If new releases of the scripts were founded you should receive notification. <br>
+		<img src="img/update.gif" alt=""/> </div>
+	<!-- SCRIPTS INFO -->
+	<!-- EN -->
+	<div class="item" id="scriptsinfo" lang="en" title="Scripts Info"> If you want to see some information about the script and version changes history just select script in list,<br>
+		press right mouse button and choose <strong>Info about script</strong> option.<br>
+		<img src="img/script_info.gif" alt=""/> <br>
+		In information window you can find information about: releases, version, author, help, overview.<br>
+		<blockquote class="red">
+			<h1>Note! </h1>
+			Not all the scripts have such Info window, just the ones adopted for the Scripts Launcher.</blockquote>
+	</div>
+	<!-- SETTINGS -->
+	<!-- EN -->
+	<div class="item" id="settings" lang="en" title="Settings">
+	 <img src="img/settings.png" alt=""/> <br>
+		<strong>Dock Launcher</strong> - pin Scripts Launcher window to left or right side of screen. <br>
+		<strong>Notify Me When</strong> - turn on/off notification about updated scripts and newest scripts.
+	</div>
+	<!-------------------------------------------------------------------------------------------------->
+	<!-- ABOUT -->
+	<div class="item" id="about" title="About">
+		<script>echo(scriptName)</script>
+		<br>
+		Idea: Eugene Astafiev<br>
+		Author:	<script>echo(author)</script>
+		<br>
+		Version: <script>echo(scriptVer)</script>
+		<br>
+		<br>
+		&copy;
+		<script>echo(year)</script> Visco. All rights reserved.<br>
+		Universal Help by
+		<script>echo(author)</script>
+		v.
+		<script>echo(helpVer)</script>
+		<br>		
+		<br>
+		<h1>Versions history:</h1>
+		<pre><strong>1.0.0</strong>
+
+* First release 
+
+<strong>1.0.1</strong>
+
++ Add buttons All and Favorite 
++ Add icon  
+
+<strong>1.0.2</strong>
+
++ Add update feature  
+
+<strong>1.1.0</strong>
+
+* Changed window width 
++ Add dock feature (Configure in Settings) 
+
+<strong>1.2.0</strong>
+
+* Small improvements 
+* Quick search by first word 
++ Add notify features (Configure in Settings) 
++ Add feature get info about any script 
+(Context menu) 
++ Add Info button in About rollout 
++ Add Help button in About rollout 
+
+<strong>1.2.1</strong>
+
+- BugFix: Small fix for 3Ds Max 2012
+
+<strong>1.2.3</strong>
+
+* Added Installs rollout for quick install plugins
+- BugFix: New versions notify
+
+<strong>1.2.4</strong>
+* Adopted for ArchViz
+
+<strong>1.2.5</strong>
+
++ Added: Added Test section
+
+<strong>1.3.0</strong>
+
++ Added: Categories
++ Added: Filter by category
+- Removed: Buttons All and Favorite
+
+<strong>1.3.1</strong>
+
++ Added: Category Custom for add custom scripts
+
+<strong>1.3.2</strong>
+
+* Improved INSTALL.mcr
++ Added: Installation scripts to interface
+
+<strong>1.3.3</strong>
+
+- BugFix: Notify updated scripts
+
+<strong>1.4.0</strong>
+
++ Added: Create button for every script by Right Click Menu
+- Removed: Installs &rarr; Install Script featature
+
+<strong>1.4.1</strong>
+
+* Changed: Filter by category. Now you can select few categories
+* Improved Help
+		</pre>
+	</div>
+</div>
+<footer>&copy;
+	<script>echo(year)</script>
+	Universal Help by
+	<script>echo(author)</script>
+	v.
+	<script>echo(helpVer)</script>
+	<br>
+	<script>echo(scriptFullname)</script>
+</footer>
+</body>
+</html>
