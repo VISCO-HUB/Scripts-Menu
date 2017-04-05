@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.4.1
+VERSION = 1.4.2
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = https://visco-hub.github.io/Scripts-Menu/
@@ -87,6 +87,10 @@ ICON=#("UVWUnwrapView",19)
 
 * Changed: Filter by category. Now you can select few categories=
 * Improved Help=
+
+[1.4.2]
+
+- BugFix: Hang in first start=
 
 [ABOUT]
 
@@ -763,8 +767,8 @@ rollout rLauncher "Scripts"
 			colorman.reInitIcons()			
 		)
 		
-		rLauncher.lbxScriptList.Update()
-		rLauncher.lbxScriptList.Refresh()
+		--rLauncher.lbxScriptList.Update()
+		--rLauncher.lbxScriptList.Refresh()
 	)
 	
 	fn installButtonType1 = installButton type: 1
@@ -1182,11 +1186,88 @@ rollout rUpdate "Update"
 (	
 	button btnUpdate "Update Scripts" enabled: true
 	
+	fn notifyScripts =
+	(			
+		f  =#()
+		for i in szCategoriesPath do
+		(
+			join f (getFiles(i + "*" + szExt))
+		)
+		
+		new = true
+		upd = true
+			 
+		szUpdated = ""
+		szNew = ""
+		m = ""
+				
+		for i in f do
+		(		
+			n = getFilenameFile  i 
+
+			v = getScriptIniInfo i
+							
+			z = rLauncher.Settings "UPDATES" n "string" "r"
+			
+			if(z != "" and v[1] != "" and v[3] > z and upd == true) then
+			(
+				szUpdated += "\t" + n + " " + v[3] + "\r\n\r\n"
+				szUpdated += "Change Log:\r\n\r\n"
+				
+				r = getScriptIniInfo i releaseInfo:v[3]
+				szUpdated += parseIniLine r + "\r\n"
+				szUpdated += "_______________________________________\r\n\r\n" 
+			)
+			else if (v[1] != "" and v[3] != "" and z == "" and new == true) then 
+			(			
+				szNew += "\t" + n + " " + v[3] + "\r\n\r\n"
+				
+				szNew += "Change Log:\r\n\r\n"
+					
+				r = getScriptIniInfo i releaseInfo:v[3]
+				szNew += parseIniLine r + "\r\n"
+				szNew += "_______________________________________\r\n\r\n" 
+			)
+					
+			rLauncher.Settings "UPDATES" n v[3] "w"
+		)
+		
+		m1 = (filterString szNew "\t\r\n").count
+		m2 = (filterString szUpdated "\t\r\n").count
+		if(m1 > 0) do m += "Added new scripts:\r\n\r\n" + szNew	
+		if(m2 > 0) do m += "Updated scripts:\r\n\r\n" + szUpdated
+
+		if(m1 > 0 or m2 > 0) do
+		(
+			global rNotify
+			try(DestroyDialog rNotify)catch()	
+					
+			global szStat = m
+		
+			rollout rNotify "New Releases" 
+			(
+				dotNetControl edtStat "System.Windows.Forms.Textbox" width:260 height:260 align:#center readOnly: true 
+				button btnOK "Ok" align: #right  width: 35
+				
+				on btnOK pressed do try(DestroyDialog rNotify)catch()
+				on rNotify open do 
+				(	
+					initTextBox edtStat
+					edtStat.text = szStat	
+				)
+				on btnCopy pressed do setClipBoardText edtStat.text			
+			)
+
+			createDialog rNotify 260 295 --modal:true
+		)
+	)
+	
 	on btnUpdate pressed do
 	(				
-		s = getFilenamePath (getThisScriptFilename())
+		--s = getFilenamePath (getThisScriptFilename())			
+		--fileIn(getThisScriptFilename())		
 				
-		fileIn(getThisScriptFilename())		
+		notifyScripts()
 	)	
 	
 	on rUpdate rolledUp x do
@@ -1196,98 +1277,7 @@ rollout rUpdate "Update"
 	)
 )
 
-fn notifyScripts =
-(
-		upd = rSettings.cbxScriptsUpdated.checked
-		new = rSettings.cbxScriptsAdded.checked
-	
-	if(new == false and upd == false) do return false
-	
-	f  =#()
-	for i in szCategoriesPath do
-	(
-		join f (getFiles(i + "*" + szExt))
-	)
-		 
-	szUpdated = ""
-	szNew = ""
-	m = ""
-			
-	for i in f do
-	(		
-		n = getFilenameFile  i 
 
-		v = getScriptIniInfo i
-						
-		z = rLauncher.Settings "UPDATES" n "string" "r"
-		
-		if(z != "" and v[1] != "" and v[3] > z and upd == true) then
-		(
-			szUpdated += "\t" + n + " " + v[3] + "\r\n\r\n"
-			szUpdated += "Change Log:\r\n\r\n"
-			
-			r = getScriptIniInfo i releaseInfo:v[3]
-			szUpdated += parseIniLine r + "\r\n"
-			szUpdated += "_______________________________________\r\n\r\n" 
-		)
-		else if (v[1] != "" and v[3] != "" and z == "" and new == true) then 
-		(			
-			szNew += "\t" + n + " " + v[3] + "\r\n\r\n"
-			
-			szNew += "Change Log:\r\n\r\n"
-				
-			r = getScriptIniInfo i releaseInfo:v[3]
-			szNew += parseIniLine r + "\r\n"
-			szNew += "_______________________________________\r\n\r\n" 
-		)
-				
-		rLauncher.Settings "UPDATES" n v[3] "w"
-	)
-	
-	m1 = (filterString szNew "\t\r\n").count
-	m2 = (filterString szUpdated "\t\r\n").count
-	if(m1 > 0) do m += "Added new scripts:\r\n\r\n" + szNew	
-	if(m2 > 0) do m += "Updated scripts:\r\n\r\n" + szUpdated
-	
-	
-	if(m1 > 0 or m2 > 0) do
-	(
-		global rNotify
-		try(DestroyDialog rNotify)catch()	
-				
-		global szStat = m
-	
-		rollout rNotify "New Releases" 
-		(
-			dotNetControl edtStat "System.Windows.Forms.Textbox" width:260 height:260 align:#center readOnly: true 
-			checkbox cbxShowOnStartup "Show on start" align: #left  across: 2
-			button btnOK "Ok" align: #right  width: 35
-			
-			on cbxShowOnStartup changed s do
-			(
-				rSettings.cbxScriptsUpdated.checked = s
-				rSettings.cbxScriptsAdded.checked = s
-				
-				rLauncher.Settings "MAIN" "NOTIFYUPDATED" s "w"	
-				rLauncher.Settings "MAIN" "NOTIFYNEW" s "w"
-			)
-			
-			
-			on btnOK pressed do try(DestroyDialog rNotify)catch()
-			on rNotify open do 
-			(	
-				initTextBox edtStat
-				edtStat.text = szStat	
-				
-				s = rSettings.cbxScriptsUpdated.checked  or rSettings.cbxScriptsAdded.checked
-				cbxShowOnStartup.checked = s
-			)
-			on btnCopy pressed do setClipBoardText edtStat.text			
-		)
-
-		createDialog rNotify 260 295 --modal:true
-	)
-)
 
 rollout rInstalls "Installs"
 (
@@ -1302,8 +1292,8 @@ rollout rInstalls "Installs"
 		szInstallsPath= getFiles(szInstallsDir + "\*" + szExt2)			
 		ddlInstalls.items = for z in szInstallsPath collect (getFilenameFile z)
 				
-		rLauncher.lbxScriptList.Update()
-		rLauncher.lbxScriptList.Refresh()
+		--rLauncher.lbxScriptList.Update()
+		--rLauncher.lbxScriptList.Refresh()
 	)
 	
 	on btnInstall pressed do
@@ -1339,8 +1329,8 @@ rollout rTest "Test"
 		
 		ddlTest.items = for z in szTestPath collect (getFilenameFile z)
 		
-		rLauncher.lbxScriptList.Update()
-		rLauncher.lbxScriptList.Refresh()
+		--rLauncher.lbxScriptList.Update()
+		--rLauncher.lbxScriptList.Refresh()
 	)
 	
 	on btnTest pressed do
@@ -1376,15 +1366,8 @@ rollout rSettings "Settings"
 		radioButtons rdoDockTo "" labels:#("Left", "Right") default:1 columns:2 align: #left		
 	)
 	
-	group "Notify Me When"
-	(
-		checkbox cbxScriptsUpdated "Scripts Updated" checked: true
-		checkbox cbxScriptsAdded "New Scripts Added" checked: true
-	)
-	
 	--button btnOpenScripts "Open Scripts Folder" enabled: false
-	timer tmrNotify active: true interval: 500
-
+	
 	on btnOpenScripts pressed do
 	(
 		if(doesDirectoryExist szScriptsDir) do return ShellLaunch szScriptsDir ""
@@ -1404,10 +1387,6 @@ rollout rSettings "Settings"
 		if(x == true) do rLauncher.fnSetDock x s
 	)
 	
-	on cbxScriptsUpdated changed x do rLauncher.Settings "MAIN" "NOTIFYUPDATED" x "w"
-	
-	on cbxScriptsAdded changed x do rLauncher.Settings "MAIN" "NOTIFYNEW" x "w"
-	
 	on rSettings open do
 	(
 		d = rLauncher.Settings "DOCK" "DOCKABLE"  "bool" "r"
@@ -1418,25 +1397,11 @@ rollout rSettings "Settings"
 			rdoDockTo.state = s 
 		)
 		catch()
-		
-		
-		n = rLauncher.Settings "MAIN" "NOTIFYNEW"  "string" "r"
-		u = rLauncher.Settings "MAIN" "NOTIFYUPDATED"  "string" "r"
-				
-		if(n != "") do cbxScriptsAdded.checked = rLauncher.Settings "MAIN" "NOTIFYNEW"  "bool" "r"
-		if(u != "") do cbxScriptsUpdated.checked = rLauncher.Settings "MAIN" "NOTIFYUPDATED"  "bool" "r"
-		
-		
-		rLauncher.lbxScriptList.Update()
-		rLauncher.lbxScriptList.Refresh()
+			
+		--rLauncher.lbxScriptList.Update()
+		--rLauncher.lbxScriptList.Refresh()
 	)
-	
-	on tmrNotify tick do
-	(
-		notifyScripts()
-		tmrNotify.active = false
-	)
-	
+		
 	on rSettings rolledUp x do
 	(
 		rLauncher.lbxScriptList.Update()
