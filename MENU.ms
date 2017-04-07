@@ -91,6 +91,7 @@ ICON=#("UVWUnwrapView",19)
 [1.4.2]
 
 - BugFix: Hang in first start=
+* Changed: Some elements sizes=
 
 [ABOUT]
 
@@ -366,12 +367,12 @@ fn displayInfo szScriptPath tb: false cat:"" =
 rollout rLauncher "Scripts" 
 (
 	dotNetControl lblTitle "System.Windows.Forms.Label" width: 148 height: 24 align: #left offset: [24, 0] across: 2	
-	button btnFilter width: 24 height: 24  align: #left border: false offset: [-100, 0]
+	button btnFilter width: 24 height: 24  align: #left border: false offset: [-110, 0]
 
-	dotNetControl edtFindScript "system.windows.forms.textBox" width: 165 height:26 across: 2 align:#left
-	dotNetControl btnFindClear "system.windows.forms.button" width:24 height:24  align: #right offset: [0, -2]
-	dotNetControl lbxScriptList "system.windows.forms.listView" height:330				
-	button btnRunScript "Run Script" width:200 height:34 offset: [-2, 0]	
+	dotNetControl edtFindScript "system.windows.forms.textBox" width: 198 height:26 across: 2 align:#left offset: [-13, 0]
+	dotNetControl btnFindClear "system.windows.forms.button" width:23 height:23  align: #right offset: [12, -1]
+	dotNetControl lbxScriptList "system.windows.forms.listView" height:330 width: 222 offset: [-13, 0]				
+	button btnRunScript "Run Script" width:220 height:34 offset: [-2, 0]	
 	timer tmrFocus "" interval: 200 active: true
 
 	
@@ -465,7 +466,7 @@ rollout rLauncher "Scripts"
 		lbxScriptList.MultiSelect = false
 		lbxScriptList.CheckBoxes = false
 		lbxScriptList.HideSelection = false
-		lbxScriptList.Columns.Add "Name" 175
+		lbxScriptList.Columns.Add "Name" 200
 			
 		lbxScriptList.Update()
 		lbxScriptList.Refresh()
