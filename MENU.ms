@@ -372,7 +372,7 @@ rollout rLauncher "Scripts"
 	dotNetControl edtFindScript "system.windows.forms.textBox" width: 198 height:26 across: 2 align:#left offset: [-13, 0]
 	dotNetControl btnFindClear "system.windows.forms.button" width:23 height:23  align: #right offset: [12, -1]
 	dotNetControl lbxScriptList "system.windows.forms.listView" height:330 width: 222 offset: [-13, 0]				
-	button btnRunScript "Run Script" width:220 height:34 offset: [-2, 0]	
+	button btnRunScript "Run Script" width:218 height:34 offset: [-1, 0]	
 	timer tmrFocus "" interval: 200 active: true
 
 	
@@ -1013,7 +1013,9 @@ rollout rLauncher "Scripts"
 		x = (Settings "POS" "x" "float" "r") 
 		y = (Settings "POS" "y" "float" "r") 
 	
-		try(rScriptsLoader.pos = [x, y]) catch()
+		desktopSize = sysInfo.DesktopSize
+			
+		if(desktopSize[1] > 0 and desktopSize[1] < x and desktopSize[2] > 0 and desktopSize[2] < y) do try(rScriptsLoader.pos = [x, y]) catch()
 		
 		szCategoriesPath = getDirectories (szScriptsDir + filterPrefix + "*")
 		
