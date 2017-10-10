@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.4.2
+VERSION = 1.4.3
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = https://visco-hub.github.io/Scripts-Menu/
@@ -92,6 +92,10 @@ ICON=#("UVWUnwrapView",19)
 
 - BugFix: Hang in first start=
 * Changed: Some elements sizes=
+
+[1.4.3]
+
+* Fixed: Install Main Toolbar Button=
 
 [ABOUT]
 
@@ -655,6 +659,10 @@ rollout rLauncher "Scripts"
 		if((skipToString stream l) == undefined) do
 		(
 			seek stream 0 
+			
+			mt = "\"Main Toolbar\""
+			
+			skipToString stream mt
 			
 			c = "</Items>"
 			

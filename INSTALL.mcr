@@ -28,6 +28,10 @@ fn addToolBarButton macro cat txt =
 		(
 			seek stream 0 
 			
+			mt = "\"Main Toolbar\""
+			
+			skipToString stream mt
+			
 			c = "</Items>"
 			
 			skipToString stream c
