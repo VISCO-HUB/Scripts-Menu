@@ -451,11 +451,13 @@ rollout rLauncher "Scripts"
 	(	
 		bg = (colorMan.getColor #background) * 255
 		
-		btnFilter.images = #(szIconFilter24i, szIconFilter24a , 1,1,1,1,1)
+		if(doesFileExist szIconFilter24i and doesFileExist szIconFilter24a) do (
+			try(btnFilter.images = #(szIconFilter24i, szIconFilter24a , 1,1,1,1,1)) catch()
+		)
 		
 		lblTitle.TextAlign =  (getProperty lblTitle.TextAlign "MiddleCenter") 
 		lblTitle.BackColor = lblTitle.backcolor.fromARGB bg[1] bg[2] bg[3]
-		lblTitle.ForeColor = lblTitle.forecolor.fromARGB 255 255 255
+		lblTitle.ForeColor = lblTitle.forecolor.fromARGB 255 255 255 
 		
 		FontStyle = dotnetclass "System.Drawing.FontStyle"
 		
