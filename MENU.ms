@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.4.3
+VERSION = 1.4.4
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = https://visco-hub.github.io/Scripts-Menu/
@@ -97,6 +97,10 @@ ICON=#("UVWUnwrapView",19)
 
 * Fixed: Install Main Toolbar Button=
 
+[1.4.4]
+
+* Changed: Menu (Filter)=
+
 [ABOUT]
 
 - Run any ViscoCG script=
@@ -122,8 +126,14 @@ global szScriptsName = filenameFromPath (getThisScriptFilename())
 global szInstallsDir = szScriptsDir + @"installs\"
 global runCopyAsstes = szInstallsDir + "copy_assets.lnk"
 global szTestDir = szScriptsDir + @"test\"
+global szIconFilter24png = szScriptsDir + @"\icons\MENU\filter_v2.png"
+global szIconFavorite24png = szScriptsDir + @"\icons\MENU\favorite_v2.png"
+global szIconClear16png = szScriptsDir + @"\icons\MENU\clear_v9.png"
+	
 global szIconFilter24i = szScriptsDir + @"\icons\MENU\filter_24i.bmp"
 global szIconFilter24a = szScriptsDir + @"\icons\MENU\filter_24a.bmp"
+global szIconFavorite24i = szScriptsDir + @"\icons\MENU\favorite_24i.bmp"
+global szIconFavorite24a = szScriptsDir + @"\icons\MENU\favorite_24a.bmp"
 	
 global iniSettingsFile = szScriptsDir + @"ini\" + (sysInfo.username) + "_" + szScriptsName + ".ini"
 global filterPrefix = "_"
@@ -370,11 +380,14 @@ fn displayInfo szScriptPath tb: false cat:"" =
 
 rollout rLauncher "Scripts" 
 (
-	dotNetControl lblTitle "System.Windows.Forms.Label" width: 148 height: 24 align: #left offset: [24, 0] across: 2	
-	button btnFilter width: 24 height: 24  align: #left border: false offset: [-110, 0]
+	dotNetControl lblTitle "System.Windows.Forms.Label" width: 153 height: 26 align: #left offset: [22, 0] across: 3	
+	--button btnFilter width: 24 height: 24  align: #left border: false offset: [-75, 0]
+	--button btnFavorite width: 24 height: 24  align: #left border: false offset: [50, 0]
+	dotnetcontrol btnFilter "System.Windows.Forms.Button" height: 24 width: 24 offset: [-77, 0]
+	dotnetcontrol btnFavorite "System.Windows.Forms.Button" height: 24 width: 24 offset: [45, 0]
 
-	dotNetControl edtFindScript "system.windows.forms.textBox" width: 198 height:26 across: 2 align:#left offset: [-13, 0]
-	dotNetControl btnFindClear "system.windows.forms.button" width:23 height:23  align: #right offset: [12, -1]
+	dotNetControl edtFindScript "system.windows.forms.textBox" width: 201 height:26 across: 2 align:#left offset: [-13, 5]
+	dotNetControl btnFindClear "system.windows.forms.button" width:23 height:23  align: #right offset: [15, 5]
 	dotNetControl lbxScriptList "system.windows.forms.listView" height:330 width: 222 offset: [-13, 0]				
 	button btnRunScript "Run Script" width:218 height:34 offset: [-1, 0]	
 	timer tmrFocus "" interval: 200 active: true
@@ -382,8 +395,37 @@ rollout rLauncher "Scripts"
 	
 	global kKeys =  DotNetClass "System.Windows.Forms.Keys" 
 	global Clr = dotNetClass "System.Drawing.Color"		
+	fn getColor r g b = (dotnetclass "System.Drawing.Color").FromArgb r g b
 ----------------------------------------------------------------------------------------------------	
 
+	fn setupImageButton btn png size: [34, 26]=
+	(
+		c = dotNetClass "System.Drawing.Color" 
+		btn.flatStyle = (dotnetclass "System.Windows.Forms.Flatstyle").Flat
+		
+		p =  getFilenamePath (getThisScriptFileName())		
+		a = dotNetClass "System.Drawing.ContentAlignment"
+		i = dotNetClass "System.Drawing.image"
+		img = i.FromFile (png)		
+		lst = dotNetObject "System.Windows.Forms.ImageList"
+		lst.ImageSize =  dotnetobject "System.Drawing.Size" (img.width) (img.height)
+		lst.images.Add img
+		btn.ImageAlign = a.MiddleCenter
+		btn.ImageIndex = 0
+		btn.ImageList = lst
+			
+		btn.Bounds = dotnetobject "System.Drawing.Rectangle" 0 0 size[1] size[2]
+		
+		btn.BackColor = getColor 68 68 68
+		lblTitle.BackColor = getColor 68 68 68
+		btn.FlatAppearance.borderSize = 0			
+		btn.FlatAppearance.CheckedBackColor = btn.backColor.Transparent
+		btn.FlatAppearance.MouseDownBackColor = getColor 100 100 100
+		btn.FlatAppearance.MouseOverBackColor = btn.backColor.Transparent	
+			
+		btn.FlatAppearance.MouseOverBackColor = getColor 54 54 54
+	)
+	
 	fn Settings z k p w =
 	(	
 		makeDir (getFilenamePath iniSettingsFile)
@@ -451,9 +493,18 @@ rollout rLauncher "Scripts"
 	(	
 		bg = (colorMan.getColor #background) * 255
 		
-		if(doesFileExist szIconFilter24i and doesFileExist szIconFilter24a) do (
+		/*if(doesFileExist szIconFilter24i and doesFileExist szIconFilter24a) do (
 			try(btnFilter.images = #(szIconFilter24i, szIconFilter24a , 1,1,1,1,1)) catch()
 		)
+		
+		if(doesFileExist szIconFavorite24i and doesFileExist szIconFavorite24a) do (
+			
+			try(btnFavorite.images = #(szIconFavorite24i, szIconFavorite24a , 1,1,1,1,1)) catch()
+		)*/
+		
+		setupImageButton btnFilter szIconFilter24png
+		setupImageButton btnFavorite szIconFavorite24png
+		setupImageButton btnFindClear szIconClear16png size: [21, 21]
 		
 		lblTitle.TextAlign =  (getProperty lblTitle.TextAlign "MiddleCenter") 
 		lblTitle.BackColor = lblTitle.backcolor.fromARGB bg[1] bg[2] bg[3]
@@ -477,7 +528,7 @@ rollout rLauncher "Scripts"
 		lbxScriptList.Update()
 		lbxScriptList.Refresh()
 			
-		btnFindClear.text = "X"		
+		--btnFindClear.text = "X"		
 	)
 		
 	fn deselectAll =
@@ -523,7 +574,7 @@ rollout rLauncher "Scripts"
 		return f
 	)	
 		
-	fn buildScriptList c =
+	fn buildScriptList =
 	(		
 		szScriptsPath = #()
 				
@@ -532,7 +583,7 @@ rollout rLauncher "Scripts"
 		(
 			z = Settings "CATEGORIES" i "bool" "r"	
 			
-			if(z == true or c == "All") do
+			if(z == true) do
 			(
 				p = szScriptsDir + filterPrefix + i + @"\"				
 				join szScriptsPath (getFiles(p + "*" + szExt))	
@@ -548,9 +599,10 @@ rollout rLauncher "Scripts"
 	(
 		szScriptsPath = (Settings "CUSTOM" "" "" "a")
 					
-		szTempScriptspath = szScriptsPath
+		join szTempScriptspath szScriptsPath
+		szTempScriptspath = makeUniqueArray szTempScriptspath
 		
-		addToLbxList(szScriptsPath)	
+		addToLbxList(szTempScriptspath)	
 	)
 	
 	fn removeFromCustom =
@@ -925,6 +977,30 @@ rollout rLauncher "Scripts"
 		)			
 	)
 	
+	fn toggleAll = (
+		
+		o = #()
+		for i in 1 to szCategoriesPath.count do
+		(				
+			c = getCategory szCategoriesPath[i]						
+			j = Settings "CATEGORIES" c "bool" "r"			
+			if(j == true) do append o j
+		)
+		
+		toggle = true
+		if(o.count == szCategoriesPath.count) do toggle = fales
+		
+		-- Set All
+		for i in 1 to szCategoriesPath.count do
+		(				
+			c = getCategory szCategoriesPath[i]						
+			Settings "CATEGORIES" c toggle "w"			
+		)
+					
+		rLauncher.buildScriptList()
+		rLauncher.showCategoriesMenu()
+	)
+	
 	fn changeCategory c =
 	(
 		bindContextMenu()
@@ -939,7 +1015,7 @@ rollout rLauncher "Scripts"
 		(
 			"Custom": buildCustomList()
 			"Favorite": buildFavoriteList()			
-			default: buildScriptList c
+			default: buildScriptList()
 		)	
 		
 		edtFindScript.Focus()
@@ -951,9 +1027,10 @@ rollout rLauncher "Scripts"
 		z = Settings "CATEGORIES" c "bool" "r"		
 
 		Settings "CATEGORIES" c (not z) "w"
-		
-		rLauncher.buildScriptList c
+				
+		--rLauncher.buildScriptList()
 		rLauncher.showCategoriesMenu()
+		rLauncher.changeCategory "Scripts"
 	)
 	
 	global rcCatChecked = undefined
@@ -973,30 +1050,30 @@ rollout rLauncher "Scripts"
 	fn showCategoriesMenu =
 	(			
 		rcPoupPos = btnFilter.pos
-		rcPoupPos.y += 24
+		rcPoupPos.y += 28
 		
 		ex = "rcmenu rcCategories \n(\n"		
-		ex += "menuItem rcAll \"All\" checked:" + rcCheckCat "All" + " \n"
-		ex += "on rcAll picked do rLauncher.changeCategory \"All\"\n"
+		ex += "menuItem rcAll \"Visible All/None\" checked:" + rcCheckCat "All" + " \n"
+		ex += "on rcAll picked do rLauncher.toggleAll() \n"
 		ex += "separator sep1\n"	
-		ex += "menuItem rcByCat \"" + szMainCategory + ":\" checked:" + rcCheckCat szMainCategory + " \n"
-		ex += "on rcByCat picked do rLauncher.changeCategory \"" + szMainCategory + "\"\n"
-		ex += "separator sep0\n"
+		--ex += "menuItem rcByCat \"" + szMainCategory + ":\" checked:" + rcCheckCat szMainCategory + " \n"
+		--ex += "on rcByCat picked do rLauncher.changeCategory \"" + szMainCategory + "\"\n"
+		--ex += "separator sep0\n"
 		
 		for i in 1 to szCategoriesPath.count do
 		(	
 			n = "rcCat" + i as string 			
 			c = getCategory szCategoriesPath[i]
 					
-			ex += "menuItem " + n +  " \"     - " + c + "\" checked: " + rcCheckItem c + " enabled:" + rcCheckCat szMainCategory + "\n" 
+			ex += "menuItem " + n +  " \"     - " + c + "\" checked: " + rcCheckItem c + " \n" 
 			ex += "on " + n + " picked do (\n rLauncher.changeSubCategory \"" + c + "\"  \n) \n"	
 		)
 		
-		ex += "separator sep2\n"
-		ex += "menuItem rcFavorite \"Favorite\" checked:" + rcCheckCat "Favorite" + " \n"
-		ex += "on rcFavorite picked do rLauncher.changeCategory \"Favorite\"\n"
+		--ex += "separator sep2\n"
+		--ex += "menuItem rcFavorite \"Favorite\" checked:" + rcCheckCat "Favorite" + " \n"
+		--ex += "on rcFavorite picked do rLauncher.changeCategory \"Favorite\"\n"
 		ex += "separator sep3\n"
-		ex += "menuItem rcCustom \"Custom\" checked:" + rcCheckCat "Custom" + " \n"
+		ex += "menuItem rcCustom \"Custom Scripts\" checked:" + rcCheckCat "Custom" + " \n"
 		ex += "on rcCustom picked do rLauncher.changeCategory \"Custom\"\n"		
 		ex += "\n )\n popUpMenu rcCategories rollout: rLauncher pos:" + rcPoupPos as string + "\n"
 		
@@ -1163,9 +1240,7 @@ rollout rLauncher "Scripts"
 		deselectAll()
 		bindContextMenu()
 	)
-	
-
-	
+		
 	on btnRunScript pressed do
 	(
 		lbxScriptList.Focus()
@@ -1176,11 +1251,20 @@ rollout rLauncher "Scripts"
 		edtFindScript.text = ""
 		edtFindScript.Focus()
 	)
-
 	
-	on btnFilter pressed do
+	on btnFavorite Click do (
+		rLauncher.changeCategory "Favorite"
+	)
+	
+	on btnFilter Click do
 	(
-		showCategoriesMenu()
+		c = Settings "MAIN" "SHOW" "" "r"
+		
+		if(c != "Scripts") then (
+			rLauncher.changeCategory "Scripts"
+		) else (
+			showCategoriesMenu()
+		)
 	)
 	on tmrFocus tick do
 	(
@@ -1470,7 +1554,7 @@ rollout rAbout "About"
 	)
 )
 
-addRollout rLauncher rScriptsLoader rolledUp:false 
+addRollout rLauncher rScriptsLoader rolledUp:false border: false
 addRollout rInstalls rScriptsLoader rolledUp:true 
 addRollout rTest rScriptsLoader rolledUp:true 
 addRollout rUpdate rScriptsLoader rolledUp:true 
