@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Scripts Launcher
-VERSION = 1.4.4
+VERSION = 1.4.5
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = https://visco-hub.github.io/Scripts-Menu/
@@ -101,6 +101,10 @@ ICON=#("UVWUnwrapView",19)
 
 * Changed: Menu (Filter)=
 
+[1.4.5]
+
+* Changed: Add button My Scripts and Favorite=
+
 [ABOUT]
 
 - Run any ViscoCG script=
@@ -128,6 +132,7 @@ global runCopyAsstes = szInstallsDir + "copy_assets.lnk"
 global szTestDir = szScriptsDir + @"test\"
 global szIconFilter24png = szScriptsDir + @"\icons\MENU\filter_v2.png"
 global szIconFavorite24png = szScriptsDir + @"\icons\MENU\favorite_v2.png"
+global szIconCustom24png = szScriptsDir + @"\icons\MENU\custom_v2.png"
 global szIconClear16png = szScriptsDir + @"\icons\MENU\clear_v9.png"
 	
 global szIconFilter24i = szScriptsDir + @"\icons\MENU\filter_24i.bmp"
@@ -380,11 +385,13 @@ fn displayInfo szScriptPath tb: false cat:"" =
 
 rollout rLauncher "Scripts" 
 (
-	dotNetControl lblTitle "System.Windows.Forms.Label" width: 153 height: 26 align: #left offset: [22, 0] across: 3	
+	dotNetControl lblTitle "System.Windows.Forms.Label" width: 119 height: 26 align: #left offset: [22, 0] across: 4
 	--button btnFilter width: 24 height: 24  align: #left border: false offset: [-75, 0]
 	--button btnFavorite width: 24 height: 24  align: #left border: false offset: [50, 0]
-	dotnetcontrol btnFilter "System.Windows.Forms.Button" height: 24 width: 24 offset: [-77, 0]
-	dotnetcontrol btnFavorite "System.Windows.Forms.Button" height: 24 width: 24 offset: [45, 0]
+	dotnetcontrol btnFilter "System.Windows.Forms.Button" height: 24 width: 24 offset: [-61, 0] 
+	dotnetcontrol btnCustom "System.Windows.Forms.Button" height: 24 width: 24 offset: [43, 0] 
+	dotnetcontrol btnFavorite "System.Windows.Forms.Button" height: 24 width: 24 offset: [28, 0]
+	
 
 	dotNetControl edtFindScript "system.windows.forms.textBox" width: 201 height:26 across: 2 align:#left offset: [-13, 5]
 	dotNetControl btnFindClear "system.windows.forms.button" width:23 height:23  align: #right offset: [15, 5]
@@ -504,6 +511,7 @@ rollout rLauncher "Scripts"
 		
 		setupImageButton btnFilter szIconFilter24png
 		setupImageButton btnFavorite szIconFavorite24png
+		setupImageButton btnCustom szIconCustom24png
 		setupImageButton btnFindClear szIconClear16png size: [21, 21]
 		
 		lblTitle.TextAlign =  (getProperty lblTitle.TextAlign "MiddleCenter") 
@@ -865,10 +873,10 @@ rollout rLauncher "Scripts"
 		
 		contextMenu = dotNetObject "System.Windows.Forms.ContextMenuStrip"	
 		
-		if(szCurrentCategory == "Custom") do
+		if(szCurrentCategory == "My Scripts") do
 		(			
-			dotNet.addEventHandler (contextMenu.Items.Add("Add to Custom")) "Click" addToCustom
-			dotNet.addEventHandler (contextMenu.Items.Add("Remove from Custom")) "Click" removeFromCustom
+			dotNet.addEventHandler (contextMenu.Items.Add("Add to My Scripts")) "Click" addToCustom
+			dotNet.addEventHandler (contextMenu.Items.Add("Remove from My Scripts")) "Click" removeFromCustom
 			contextMenu.Items.Add("-")
 		)			
 		
@@ -898,7 +906,7 @@ rollout rLauncher "Scripts"
 			contextMenuItem contextMenu "Add to Favorite" enabled: false	
 			contextMenuItem contextMenu "Remove from Favorite" enabled: false	
 			
-			contextMenuItem contextMenu "Remove from Custom" enabled: false	
+			contextMenuItem contextMenu "Remove from My Scripts" enabled: false	
 		)
 		
 		if(id == 0 or (i[1] == "" and i[2] == "")) do contextMenuItem contextMenu "Info about script" enabled: false	
@@ -1013,7 +1021,7 @@ rollout rLauncher "Scripts"
 		
 		case c of
 		(
-			"Custom": buildCustomList()
+			"My Scripts": buildCustomList()
 			"Favorite": buildFavoriteList()			
 			default: buildScriptList()
 		)	
@@ -1072,9 +1080,9 @@ rollout rLauncher "Scripts"
 		--ex += "separator sep2\n"
 		--ex += "menuItem rcFavorite \"Favorite\" checked:" + rcCheckCat "Favorite" + " \n"
 		--ex += "on rcFavorite picked do rLauncher.changeCategory \"Favorite\"\n"
-		ex += "separator sep3\n"
-		ex += "menuItem rcCustom \"Custom Scripts\" checked:" + rcCheckCat "Custom" + " \n"
-		ex += "on rcCustom picked do rLauncher.changeCategory \"Custom\"\n"		
+		--ex += "separator sep3\n"
+		--ex += "menuItem rcCustom \"Custom Scripts\" checked:" + rcCheckCat "Custom" + " \n"
+		--ex += "on rcCustom picked do rLauncher.changeCategory \"Custom\"\n"		
 		ex += "\n )\n popUpMenu rcCategories rollout: rLauncher pos:" + rcPoupPos as string + "\n"
 		
 		execute ex			
@@ -1254,6 +1262,10 @@ rollout rLauncher "Scripts"
 	
 	on btnFavorite Click do (
 		rLauncher.changeCategory "Favorite"
+	)
+	
+	on btnCustom Click do (
+		rLauncher.changeCategory "My Scripts"
 	)
 	
 	on btnFilter Click do
